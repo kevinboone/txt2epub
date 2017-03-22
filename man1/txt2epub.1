@@ -1,0 +1,158 @@
+.\" Copyright (C) 2017 Kevin Boone 
+.\" Permission is granted to any individual or institution to use, copy, or
+.\" redistribute this software so long as all of the original files are
+.\" included, that it is not sold for profit, and that this copyright notice
+.\" is retained.
+.\"
+.TH kobo 1 "March 2017"
+.SH NAME
+txt2epub \- a utility for converting text e-books to EPUB documents 
+.SH SYNOPSIS
+.B txt2epub 
+.RB [options]
+.B {text_files...}
+.PP
+
+.SH DESCRIPTION
+
+\fItxt2epub\fR converts one or more text files, assumed to be in
+ASCII or UTF-8 format, into an EPUB document. 
+
+
+.SH EXAMPLE
+
+.nf
+.B txt2epub\ -o\ dickens_great_expectations.epub
+.B --author\ "Dickens,\ Charles"\ --title\ "Great\ Expectations" 
+.B gex1.txt\ gex2.txt\ gex3.txt
+
+Convert files gex1.txt, etc., into an EPUB document, setting the 
+author and title meta-data appropriately. Each file with receive an
+entry in the table of contents. 
+
+.B txt2epub\ sample.txt
+
+Convert sample.txt into an EPUB document sample.epub, using default
+values for the document meta-data. 
+
+.SH "OPTIONS"
+.TP
+.BI -c,\-\-cover-image \ {filename}
+Specifies a file to be used as the cover image. If supplied, this image
+will form the first page of the book.
+.LP
+
+.TP
+.BI -a,\-\-author \ {name}
+Set the author in the EPUB meta-data. Both the display author and the
+filing ("sort-as") author are set to the same value
+.LP
+
+.TP
+.BI \-\-loglevel \ {0-3}
+For debugging purposes, sets the logging verbosity from 0 (the default
+-- serious errors only) to 3
+.LP
+
+
+.TP
+.BI \-\-ignore-indent
+Do not treat a line that begins with whitespace as a paragraph break
+.LP
+
+.TP
+.BI \-\-ignore-markdown
+Do not respect Markdown-style formatting like *bold*
+.LP
+
+.TP
+.BI \-l,\-\-language \ {language_code}
+Sets the document's two-character language code. The default is "en", 
+English
+.LP
+
+.TP
+.BI \-o,\-\-output-file \ {filename}
+Sets the filename for the EPUB output. If none is specified, and if there
+is only one input file, then the output will be to a file with the same
+name in the same directory, with extension ".epub" 
+.LP
+
+.TP
+.BI \-t,\-\-title \ {text}
+Sets the document's overall title 
+.LP
+
+
+.TP
+.BI -v,\-\-version
+Display version and copyright infomation
+.LP
+
+.SH NOTES
+
+.SS Character encoding 
+
+EPUB documents are required to be encoded in UTF-8. This is the default
+on most Linux and Unix platforms, but there are many encoding standards
+in use. A strict ASCII file can be treated as UTF-8 without modification,
+but the same cannot be said for the many 8-bit "extended ASCII" 
+character encodings that are in use.
+\fItxt2epub\fR will not attempt to change, or even guess, an input file's
+encoding. If it is not UTF-8, results will be variable. On Linux,
+the  
+\fIiconv\fR 
+utility can be used to change character encoding. For example, to 
+convert from ISO8859-1:
+
+.nf
+.B iconv\ -f\ iso8859-1\ -t\ utf8\ {input_file}\ >\ {output_file} 
+
+.SS Table of contents 
+
+\fItxt2epub\fR does not write a visible contents page in
+the EPUB document. However, it does write an internal "NCX" 
+table-of-contents, that most readers support (and, in many cases,
+insist on). Each text file specified on the command line gets
+an entry in the table-of-contents, even if there is only one
+input file. 
+
+.SS Input formatting
+
+Input is assumed to consists of lines or aribtrary length, with
+paragraph breaks signalled either by a blank line, or an indent
+of three or more whitespace characters. Because some documents that
+have blank-line paragraphs have lines that accidentally start
+with spaces, the use of indents as paragraph breaks can be
+turned off (--ignore-indents)
+
+By default, 
+\fItxt2epub\fR respects simple Markdown-style formatting marks,
+like _italic_ and *bold*. This behaviour can be turned off
+using --ignore-markdown. 
+
+.SH BUGS AND LIMITATIONS
+
+No check is made that the input file really is text, or even that 
+any of the input files actually exist. Any input file that does not
+exist results in a book chapter whose text is an error message.
+
+Users should be wary of using constructions like "book*.txt" to include
+many files. While Linux shells usually present files in alphanumeric order,
+subtleties like locale and collation settings can modify this.
+
+
+.SH AUTHOR AND LEGAL
+\fItxt2epub\fR
+is maintained by Kevin Boone, and is open source under the
+terms of the GNU Public Licence, version 3.0. 
+There is no warranty
+of any kind.
+
+
+.SH FURTHER INFORMATION 
+For more details, see 
+http://kevinboone.net/README_txt2epub.html.
+
+
+.\" end of file

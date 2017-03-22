@@ -1,0 +1,191 @@
+<a href="articles.html">&bull; Articles</a><a href="computing_articles.html">&bull; Articles about computing</a><a href="utility_corner.html">&bull; Utility corner</a><p/>
+
+
+<h1>txt2pub</h1>
+
+Version 0.0.1, March 2017
+
+<h2>What is this?</h2>
+
+<code>txt2epub</code> is a command-line utility for Linux,
+for converting one
+or more plain text files into an EPUB document. It will insert the
+standard author/title meta-data, and can include a cover image.
+Limited formatting is possible using Markdown-style markup,
+or full XHTML. 
+<p/>
+This utility is intended as a quick way to covert books provided
+as plain text into a format that can be handled more easily by 
+e-readers. Although most portable devices that might be used
+for reading can handle plain text perfectly well, the
+lack of meta-data or a cover image makes collections of
+such documents unwieldy.
+<p/>
+Although it is not its main function,  
+<code>txt2epub</code> can be used with a plain text editor
+to produce a commericial-quality EPUB novel, 
+that will pass most publishers' validation checks. However, 
+books that have complex formatting, or embedded images, 
+need a more sophisticated approach. 
+
+
+<h2>Example usage</h2>
+
+<pre class="codeblock">
+txt2epub\ -o\ dickens_great_expectations.epub \
+   --author\ "Dickens,\ Charles"\ --title\ "Great\ Expectations" \ 
+   gex1.txt\ gex2.txt\ gex3.txt
+</pre>
+
+Convert files gex1.txt, etc., into an EPUB document, setting the 
+author and title meta-data appropriately. Each file with receive an
+entry in the table of contents. 
+
+
+<h2>Prerequisites</h2>
+
+The only external runtime dependencies are on the standard 
+linux <code>zip</code>
+utility, and the PCRE regular expression parsing library. Both
+should be available in the repositories of most Linux distributions. 
+<p/>
+<code>txt2epub</code> will probably build and run on other
+Linux-like systems, but this has not been tested. 
+
+
+<h2>Building and installing</h2>
+
+The usual:
+
+<pre class="codeblock">
+$ make
+$ sudo make install
+</pre>
+
+<h2>Notes</h2>
+
+<h3>Markdown support</h3>
+
+Unless it is disabled (<code>--ignore-markdown</code>), <code>txt2epub</code>
+processes a small set of markdown-type formatting markers:
+
+<pre class="codeblock">
+#This is a heading
+##This is a subheading
+###This is a subsubheading
+This is _italic_. This is *bold*
+</pre>
+
+A line that ends in two spaces (which may not be visible at all in a text
+editor) is terminated with a line-break. This is a simple way to
+include pre-formatted text.
+<p/>
+These markdown constructions are turned into basic HTML 
+tags (not style classes).
+
+<h3>XHTML support</h3>
+
+Any text files supplied to 
+<code>txt2epub</code> are just inserted into the body of an XHTML 
+document, as this is the presentation format that EPUB specifies.
+It follows that files can contain XHTML markup if necessary.
+XHTML is a stricter standard than HTML, and many ordinary HTML files will not
+pass muster -- a typical problem is not closing tags, or using
+the wrong letter case in tags.
+<p/>
+Providing XHTML can be useful for heavily formatted pages such as a
+title page or dedication. However, the files provided should
+<i>not</i> be full XHTML files --   
+<code>txt2epub</code> will write the proper XHTML header and footer.
+Instead, just provide the body text.
+<p/>
+Many commercial e-readers use existing HTML rendering software to 
+display text; in such cases you might get away with using ordinary
+HTML. However, it isn't strictly correct, and won't pass a
+publisher's validation checks.
+ 
+
+<h3>Input text formatting issues</h3>
+
+E-book text files tend to be formatted in one of three ways:
+
+<ul>
+<li>One very long line per paragraph</li>
+<li>Variable-length lines with blank lines to indicate paragraph breaks</li>
+<li>Variable-length lines with no blanks; paragraph breaks are indicated
+by white-space intended lines</li> 
+</ul>
+
+<code>txt2epub</code> attempts to handle the third type by treating any
+line that starts with three or more whitespace characters as a paragraph
+break. Because some files that are formatted as variable-length lines
+end up with spaces at the start of each line, this behaviour can be
+turned off using <code>--ignore-indent</code>.
+
+<h3>stdin</h3>
+
+<code>txt2epub</code> will read from standard input (stdin) if
+a minus sign (-) is used for the filename.  
+
+
+<h3>Cover image support</h3>
+
+The switch <code>--cover-image</code> can be used to provide the EPUB
+document with a leading cover page. This image is presented as a single-page
+image without any annotation, at the start of the book. EPUB guidelines 
+suggest that a cover image should be 590 pixels wide by 750 high. No
+check is made that the image meets this guideline -- it is simply
+copied into the EPUB. An error message will be shown if the image file
+does not exist, but the EPUB will still be created.
+<p/>
+The EPUB specification states that images files must be in JPEG, GIF,
+SVG, or PNG formats. 
+<code>txt2epub</code> will install images of any type but, as with
+wrongly sized images, EPUB viewers vary in their willingness to 
+display them. 
+
+<h2>Bugs and limitations</h2>
+
+<code>txt2epub</code> presently does not remove unnecessary byte-order
+markers and similar encoding detritus from text files. 
+<p/>
+Users should be wary of using constructions like "book*.txt" to include
+many files. While Linux shells usually present files in alphanumeric order,
+subtleties like locale and collation settings can modify this.
+<p/>
+Files created by this utility will not necessarily pass the validation
+in  
+<code>epubcheck</code> 
+because the "mimetype" file is not always the first in the archive. This
+can be fixed if it causes problems with readers; so far it has not.
+<p/>
+<code>txt2epub</code> does not write a "guide" section in the 
+NCX table-of-contents. This is optional and, so far as I know, no EPUB
+reader takes much notice of it. 
+
+
+
+<h2>More information</h2>
+
+More detailed usage information is avaialble in the manual:
+<code>man txt2epub</code>.
+
+
+<h2>Legal, etc</h2>
+
+<code>txt2epub</code> is maintained by Kevin Boone, and distributed under the
+terms of the GNU Public Licence, version 3.0. Essentially, you may do
+whatever you like with it, provided the original author is acknowledged, and
+you accept the risks involved in doing so. 
+<p/>
+
+<h2>Downloads</h2>
+
+The most up-to-date source will always be found by checking out
+the 
+<a href="http://github.com/kevinboone/txt2epub">github repository</a>. 
+Alternatively, download the
+<a href="txt2epub.tar.gz">source code bundle</a>.
+
+
+

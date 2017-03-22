@@ -1,0 +1,25 @@
+#This is the title
+
+This is a test. This is the first line. It is a long line, and should wrap, blah, blah, blah.
+   This is the second line. It starts with an indent, but in markdown mode
+should not really be a 
+new paragraph. This word is *bold* and this one _italic_.
+
+This is the third paragraph. It is a real paragraph with a blank line.
+   This is the fourth paragraph.
+
+##This is the subtitle
+
+Here is some more *bold* text under the subtitle.
+
+###This is the subsubtitle
+
+This section should be formatted as short lines with line breaks
+
+The boy stood on the burning deck  
+The heat did make him quiver  
+He gave a cough, his leg fell off  
+And floating down the river.
+
+And the end.
+
