@@ -24,10 +24,10 @@ ASCII or UTF-8 format, into an EPUB document.
 .nf
 .B txt2epub\ -o\ dickens_great_expectations.epub
 .B --author\ "Dickens,\ Charles"\ --title\ "Great\ Expectations" 
-.B gex1.txt\ gex2.txt\ gex3.txt
+.B chapter01.txt\ chapter02.txt\ chapter03.txt\ ...
 
-Convert files gex1.txt, etc., into an EPUB document, setting the 
-author and title meta-data appropriately. Each file with receive an
+Convert files chapter01.txt, etc., into an EPUB document, setting the 
+author and title meta-data appropriately. Each file will receive an
 entry in the table of contents. 
 
 .B txt2epub\ sample.txt
@@ -39,13 +39,15 @@ values for the document meta-data.
 .TP
 .BI -c,\-\-cover-image \ {filename}
 Specifies a file to be used as the cover image. If supplied, this image
-will form the first page of the book.
+will form the first page of the book. EPUB guidelines suggest a 
+JPEG or PNG image of size 590x750 pixels 
 .LP
 
 .TP
 .BI -a,\-\-author \ {name}
 Set the author in the EPUB meta-data. Both the display author and the
-filing ("sort-as") author are set to the same value
+filing ("sort-as") author are set to the same value. If none is given,
+the author name is set to "unknown"
 .LP
 
 .TP
@@ -86,8 +88,27 @@ name in the same directory, with extension ".epub"
 .LP
 
 .TP
+.BI \-r,\-\-remove-pagenum
+Try to remove spurious page numbers from text files. This can be useful
+when converting documents that were originally inteded from print,
+and have been converted from PDF or PostScript. A page number
+is a line that contains only whitespace and digits. This option is
+not enabled by default, because there are situations where such
+text might not be a page number -- there is no easy way to be sure
+.LP
+
+.TP
 .BI \-t,\-\-title \ {text}
-Sets the document's overall title 
+Sets the document's overall title  If none is given, the title will be
+derived from the output document's filename
+.LP
+
+.TP
+.BI \-x,\-\-extra-para 
+Inserts an extra paragraph break after each input line. This can be useful
+for text documents that have no paragraph indication at all, just
+very long lines one after another. In other cases it will usually
+produce unhappy results 
 .LP
 
 

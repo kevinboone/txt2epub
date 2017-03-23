@@ -1,7 +1,7 @@
 <a href="articles.html">&bull; Articles</a><a href="computing_articles.html">&bull; Articles about computing</a><a href="utility_corner.html">&bull; Utility corner</a><p/>
 
 
-<h1>txt2pub</h1>
+<h1>txt2epub</h1>
 
 Version 0.0.1, March 2017
 
@@ -13,9 +13,9 @@ or more plain text files into an EPUB document. It will insert the
 standard author/title meta-data, generate a table of contents,
 and can include a cover image.
 Limited formatting is possible using Markdown-style text markup,
-or full XHTML. 
+or full XHTML if required. 
 <p/>
-This utility is intended as a relatively quick way to covert books provided
+This utility is intended as a relatively quick way to convert books provided
 as plain text into a format that can be handled more easily by 
 e-readers. Although most portable reading devices and software
 can handle plain text perfectly well, the
@@ -23,17 +23,18 @@ lack of meta-data or a cover image makes collections of
 such documents unwieldy.
 <p/>
 Although it is not its main function,  
-<code>txt2epub</code> can be used with a plain text editor
-to produce a commericial-quality EPUB novel, 
+<code>txt2epub</code> can be used with just a plain text editor
+to produce a commercial-quality EPUB novel, 
 that will pass most publishers' validation checks. However, 
 books that have complex formatting, or embedded images, 
 need a more sophisticated approach. 
 <p/>
-One of the design goals of <code>txt2epub</code> is to produce
-"clean" documents, free of software-specific stylesheets and formatting.
-The EPUBs it creates will not specify fonts, 
-absolute text sizes, colours, margins, or layout. The way the text is rendered
-is thus completely under the control of the reader.  
+One of the design goals of <code>txt2epub</code> is to produce "clean"
+documents, free of software-specific stylesheets and formatting.  The EPUBs it
+creates will not specify fonts, absolute text sizes, colours, margins, or
+layout. The way the text is
+rendered is thus completely under the control of the reader. Its output should
+thus be acceptably readable on screens of different sizes. 
 
 
 <h2>Example usage</h2>
@@ -41,12 +42,15 @@ is thus completely under the control of the reader.
 <pre class="codeblock">
 txt2epub\ -o\ dickens_great_expectations.epub \
    --author\ "Dickens,\ Charles"\ --title\ "Great\ Expectations" \ 
-   gex1.txt\ gex2.txt\ gex3.txt
+   --cover-image ge.jpg\
+   chapter01.txt chapter02.txt chapter03.txt\ ...
 </pre>
 
-Convert files gex1.txt, etc., into an EPUB document, setting the 
-author and title meta-data appropriately. Each file with receive an
-entry in the table of contents. 
+Convert files <code>chapter01.txt</code>, etc., into an 
+EPUB document, setting the 
+author and title meta-data appropriately. Each file will receive an
+entry in the table of contents. The image <code>ge.jpg</code> will
+form the book cover. 
 
 
 <h2>Prerequisites</h2>
@@ -88,7 +92,7 @@ A line that ends in two spaces (which may not be visible at all in a text
 editor) is terminated with a line-break. This is a simple way to
 include pre-formatted text.
 <p/>
-These markdown constructions are turned into basic HTML 
+These markdown constructions are turned into basic (X)HTML 
 tags (not style classes).
 <p/>
 Note that Markdown-style markup cannot span lines. A very long italic
@@ -121,27 +125,46 @@ publisher's validation checks.
 <h3>Table of contents</h3>
 
 <code>txt2epub</code> does not write a contents page in the document.
-However, it does write an NCX table of contents, which most readers
-will be able to display at any point whilst reading a book. The
-entries in the table of contents will be taken <i>directly</i> from
+However, it does write an NCX table of contents, which most e-readers
+will be able to display at any point whilst reading a book. 
+This form of table of contents also enables the next-chapter/previous-chapter
+controls on readers that have them.
+<p/>
+By default, the
+entries in the table of contents will be taken from
 the input filename, after removing any extension. So a nicely-formatted
 table of contents will require that the filenames are as a reader
 should see them, with capital letters where appropriate and spaces
 between words. 
-
+<p/>
+An alternative approach to generating a table of contents is
+to ensure that the first line of each file is a chapter heading,
+and use the <code>--first-lines</code> switch. This will also format
+the first line as a heading (specifically, it will embed it in an H1 tag).
 
 <h3>Input text formatting issues</h3>
 
-E-book text files tend to be formatted in one of three ways:
+E-book text files tend to be formatted in one of four ways:
 
 <ul>
-<li>One very long line per paragraph</li>
+<li>One very long line per paragraph, with a blank line between
+each paragraph</li>
+<li>One very long line per paragraph, with no blank lines between 
+paragraphs</li>
 <li>Variable-length lines with blank lines to indicate paragraph breaks</li>
 <li>Variable-length lines with no blanks; paragraph breaks are indicated
 by white-space intended lines</li> 
 </ul>
 
-<code>txt2epub</code> attempts to handle the third type by treating any
+No special effort is required to handle the first type. The second
+type will be formatted by most readers as a solid block of uninterrupted
+text, which is not pleasant to read. The <code>--extra-para</code> 
+switch might help here, by inserting a paragraph break after each 
+input line. 
+<p/>
+Files of the third type present no problem.
+<p/>
+<code>txt2epub</code> attempts to handle the fourth type by treating any
 line that starts with three or more whitespace characters as a paragraph
 break. Because some files that are formatted as variable-length lines
 end up with spaces at the start of each line, this behaviour can be
@@ -150,14 +173,15 @@ turned off using <code>--ignore-indent</code>.
 <h3>stdin</h3>
 
 <code>txt2epub</code> will read from standard input (stdin) if
-a minus sign (-) is used for the filename.  
+a minus sign (-) is used for the filename. It will be necessary
+to specify the EPUB filename (<code>-o</code>) in such a case.
 
 
 <h3>Cover image support</h3>
 
 The switch <code>--cover-image</code> can be used to provide the EPUB
 document with a leading cover page. This image is presented as a single-page
-image without any annotation, at the start of the book. EPUB guidelines 
+without any annotation, at the start of the book. EPUB guidelines 
 suggest that a cover image should be 590 pixels wide by 750 high. No
 check is made that the image meets this guideline -- it is simply
 copied into the EPUB. An error message will be shown if the image file
@@ -169,6 +193,7 @@ SVG, or PNG formats.
 wrongly sized images, EPUB viewers vary in their willingness to 
 display them. 
 
+<h2>Hints</h2>
 
 <h3>Splitting long documents</h3>
 
@@ -197,9 +222,54 @@ above.)
 <p/>
 The <code>-f</code> switch instructs <code>txt2epub</code> to use the
 first line of each file as a chapter heading, both in formatting and
-in the table of contents. This works because the use of csplit ensures
+in the table of contents. This works because the use of <code>csplit</code>
+ ensures
 that every file (with the possible exception of the first) begins
 with the specified pattern. 
+
+<h3>Character encoding</h3>
+
+EPUB text is required to be formatted as UTF-8. Plain ASCII works fine,
+as it is a subset of UTF-8. 8-bit extended ASCII variants will display
+with varying degrees of ugliness, depending on how many extended
+characters are used. A typical symptom of encoding mismatches of this
+sort is to see double-quotes rendered as upside-down question marks, or
+similar punctuation errors.
+<p/>
+<code>txt2epub</code> assumes that all text input is in UTF-8 or ASCII format.
+If this assumption causes problems, the <code>iconv</code> utility
+may be used to pre-process the text and fix the encoding. Unfortunately,
+if you receive a text document that has been converted from
+Microsoft Word or some other proprietary word processor, it can often
+be quite difficult to guess what the character encoding is. Consequently,
+some trial-and-error may be needed.
+
+
+<h3>Converting PDF, etc</h3>
+
+<code>txt2epub</code> can not decode PDF documents, but reasonable results
+may sometimes be obtained by using it to process the output of
+<code>pdftotext -layout -nopgbrk</code>. The <code>-layout</code> switch tells 
+<code>pdftotext</code> to
+attemp to preserve page layout; this is usually impossible, but it does
+mean that you will usually get blank lines between paragraphs. These
+are needed for <code>txt2epub</code> to identify paragraph breaks.
+The <code>-nopgbrk</code> prevents page break (ctrl-L) characters
+being written into the text. These don't usually cause problems in
+EPUB viewers -- they are usually ignored. But, strictly speaking,
+they are illegal in UTF-8 XML. 
+<p/>
+Documents converted from print sources often have page numbers and
+other unhelpful text embedded in the document body. Most of this is
+difficult to remove, but 
+<code>txt2epub</code> will attempt to remove page numbers, if the
+<code>--remove-pagenum</code> switch is specified. A page number is
+taken to be any line that consists of white space, followed by
+digits. Unfortunately, while (for example) a single line containing 
+"23" will be removed, "Page 23" won't. Documents with this kind
+of detritus may need more sophisticated pre-processing.
+
+
 
 <h2>Bugs and limitations</h2>
 
@@ -234,7 +304,7 @@ More detailed command-line usage information is avaialble in the manual:
 <code>txt2epub</code> is maintained by Kevin Boone, and distributed under the
 terms of the GNU Public Licence, version 3.0. Essentially, you may do
 whatever you like with it, provided the original author is acknowledged, and
-you accept the risks involved in doing so. 
+you accept the risks involved in its use. 
 <p/>
 
 <h2>Downloads</h2>

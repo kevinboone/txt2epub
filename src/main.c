@@ -115,6 +115,8 @@ int main (int argc, char **argv)
   static BOOL show_version = FALSE;
   static BOOL show_usage = FALSE;
   static BOOL firstlines = FALSE;
+  static BOOL extra_para = FALSE;
+  static BOOL remove_pagenum = FALSE;
   static int loglevel = ERROR;
   char *epub_file = NULL;
   char *book_title = NULL;
@@ -122,8 +124,6 @@ int main (int argc, char **argv)
   char *book_language = NULL;
   char *cover_image = NULL;
   char *cover_basename = NULL; 
-  BOOL indent_is_para = TRUE;
-  BOOL markdown = TRUE;
 
   static struct option long_options[] = 
    {
@@ -135,16 +135,21 @@ int main (int argc, char **argv)
      {"output-file", required_argument, NULL, 'o'},
      {"ignore-indent", no_argument, NULL, 'i'},
      {"ignore-markdown", no_argument, NULL, 'm'},
+     {"remove-pagenum", required_argument, NULL, 'r'},
      {"title", required_argument, NULL, 't'},
+     {"extra-para", no_argument, NULL, 'x'},
      {"version", no_argument, &show_version, 'v'},
      {0, 0, 0, 0}
    };
+
+  BOOL indent_is_para = TRUE;
+  BOOL markdown = TRUE;
 
   int opt;
   while (1)
    {
    int option_index = 0;
-   opt = getopt_long (argc, argv, "vh?o:t:a:l:imc:f",
+   opt = getopt_long (argc, argv, "vh?o:t:a:l:imc:fxr",
      long_options, &option_index);
 
    if (opt == -1) break;
@@ -156,6 +161,9 @@ int main (int argc, char **argv)
           show_version = TRUE;
         else if (strcmp (long_options[option_index].name, "first-lines") == 0)
           firstlines = TRUE;
+        else if (strcmp (long_options[option_index].name, "remove_pagenum") 
+             == 0)
+          remove_pagenum = TRUE;
         else if (strcmp (long_options[option_index].name, "help") == 0)
           show_usage = TRUE;
         else if (strcmp (long_options[option_index].name, "loglevel") == 0)
@@ -172,6 +180,8 @@ int main (int argc, char **argv)
           book_language = strdup (optarg);
         else if (strcmp (long_options[option_index].name, "ignore-index") == 0)
           indent_is_para = FALSE; 
+        else if (strcmp (long_options[option_index].name, "extra-para") == 0)
+          extra_para = TRUE; 
         else if (strcmp (long_options[option_index].name, "ignore-markdown") 
                == 0)
           markdown = FALSE; 
@@ -186,8 +196,10 @@ int main (int argc, char **argv)
      case 'l': book_language = strdup (optarg); break;
      case 'o': epub_file = strdup (optarg); break;
      case 'm': markdown = FALSE; break;
+     case 'r': remove_pagenum = TRUE; break;
      case 't': book_title = strdup (optarg); break;
      case 'v': show_version = TRUE; break;
+     case 'x': extra_para = TRUE; break;
      case '?': show_usage = TRUE; break;
      default:  exit(-1);
      }
@@ -197,14 +209,17 @@ int main (int argc, char **argv)
     {
     printf ("Usage %s [options]\n", argv[0]);
     printf ("  -a,--author A         set book author (default: unknown)\n");
+    printf ("  -c,--cover-image F    use image file F as the cover\n");
     printf ("     --loglevel N       log verbosity, 0 (default) - 3\n");
     printf ("  --ignore-indent       don't break paragraph on indent\n");
     printf ("  --ignore-markdown     do not respect Markdown formatting\n");
     printf ("  -f,--first-lines      first line is chapter heading\n");
     printf ("  -l,--language A       set book language (default: en)\n");
+    printf ("  -r,--remove-pagenum   try to remove page numbers\n");
     printf ("  -t,--title A          set book title (default: filename)\n");
     printf ("  -v,--version          show version information\n");
     printf ("  -o,--output-file      EPUB output filename\n");
+    printf ("  -x,--extra-para       Every input line is a paragraph\n");
     printf ("  -?                    show this message\n");
     exit (0);
     }
@@ -280,7 +295,9 @@ int main (int argc, char **argv)
       }
     else
       {
-      book_title = strdup (epub_file);
+      book_title = strdup (basename (epub_file));
+      char *p = strrchr (book_title, '.');
+      if (p) *p = 0;
       kmslog_debug ("Book title \"%s\" derived from output filename", 
        book_title);
       }
@@ -370,7 +387,8 @@ int main (int argc, char **argv)
               char *title = kmslist_get (chapter_list, i);
 	      asprintf (&file, "%s/file%d.html", working_dir, i);
 	      char *file_html = text_file_to_xhtml (argv [optind+i], title,
-                indent_is_para, markdown, firstlines);
+                indent_is_para, markdown, firstlines, extra_para, 
+                remove_pagenum);
 	      if (string_to_file (file_html, file))
                 {
                 kmslog_error 

@@ -23,7 +23,7 @@
 #include "text.h" 
 
 static pcre *re_italic, *re_bold, *re_indent,
-            *re_h1, *re_h2, *re_h3, *re_br;
+            *re_h1, *re_h2, *re_h3, *re_br, *re_pagenum;
 
 /*==========================================================================
   strip_cr 
@@ -68,6 +68,9 @@ void text_init_regex(void)
 
   re_br = pcre_compile ("  $", 0, 
     &pcreErrorStr, &pcreErrorOffset, NULL);
+
+  re_pagenum = pcre_compile ("^\\s\\s+\\d+", 0, 
+    &pcreErrorStr, &pcreErrorOffset, NULL);
   }
 
 
@@ -90,6 +93,8 @@ void text_cleanup_regex(void)
     pcre_free (re_h3);
   if (re_br)
     pcre_free (re_br);
+  if (re_pagenum)
+    pcre_free (re_pagenum);
   }
 
 
@@ -393,16 +398,66 @@ while (!done)
 
 
 /*==========================================================================
+  text_subs_pagenum
+==========================================================================*/
+char *text_subs_pagenum (const char *_input)
+  {
+  char *input = strdup (_input);
+  BOOL done = FALSE;
+  KMSString *s = kmsstring_create_empty ();
+
+while (!done)
+  {
+  int vec[10];
+  int count = pcre_exec (re_pagenum, NULL, input, strlen (input),  
+     0, 0, vec, 10);         
+
+  if (count != 1) done = TRUE;
+  if (!done)
+    {
+    char *temp = strdup (input);
+    temp[vec[0]] = 0;
+    kmsstring_append (s, temp);
+    free (temp);
+    char *subs = strdup (input+ vec[0]+1);
+    subs [vec[1] - vec[0] - 2] = 0;
+    //kmsstring_append (s, subs);
+    // Do nothing in this case -- just dump the whole thing
+    free (subs);
+    temp = strdup (input + vec[1]);
+    free (temp);
+    memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+    }
+  }
+
+  kmsstring_append (s, input);
+
+  char *t = strdup (kmsstring_cstr(s));
+  free (input);
+  kmsstring_destroy (s);
+  return t;
+  }
+
+
+
+/*==========================================================================
   format_line 
   // Note -- line may (in theory) be a magabyte long
 ==========================================================================*/
 static char *format_line (const char *line, BOOL indent_is_para, 
-    BOOL markdown)
+    BOOL markdown, BOOL remove_pagenum)
   {
+  char *line1; 
+
+  if (remove_pagenum)
+    line1 = text_subs_pagenum (line);
+  else
+    line1 = strdup (line); 
+
   char *md_out;
   if (markdown)
     {
-    char *line2 = text_subs_bold (line);
+    char *line2 = text_subs_bold (line1);
     char *line3 = text_subs_italic (line2);
     free (line2);
     char *line4 = text_subs_h3 (line3);
@@ -417,15 +472,27 @@ static char *format_line (const char *line, BOOL indent_is_para,
     }
   else
     {
-    md_out = strdup (line);
+    md_out = strdup (line1);
     }
+  free (line1);
   char *line4;
   if (indent_is_para)
     line4 = text_subs_indent (md_out);
   else
     line4 = strdup (md_out); 
+
+   char *line5 = strdup (line4);
+/*
+  char *line5;
+  if (TRUE)
+    line5 = text_subs_pagenum (line4);
+  else
+    line5 = strdup (line4); 
+*/
+  free (line4);
+
   free (md_out);
-  return line4;
+  return line5;
   }
 
 /*==========================================================================
@@ -433,7 +500,8 @@ static char *format_line (const char *line, BOOL indent_is_para,
 ==========================================================================*/
 // TODO -- stdin
 char *text_file_to_xhtml (const char *textfile, const char *title, 
-     BOOL indent_is_para, BOOL markdown, BOOL first_is_title)
+     BOOL indent_is_para, BOOL markdown, BOOL first_is_title, BOOL line_paras,
+     BOOL remove_pagenum)
   {
   kmslog_info ("Processing file %s", textfile);
 
@@ -473,7 +541,8 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
           {
           kmsstring_append (xml, "</p><p>\n");
           }
-        char *newline = format_line (line, indent_is_para, markdown);
+        char *newline = format_line (line, indent_is_para, markdown, 
+          remove_pagenum);
         if (first_is_title && (lines == 0))
           {
           kmsstring_append (xml, "<h1>");
@@ -485,6 +554,8 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
           kmsstring_append (xml, newline);
           }
         kmsstring_append (xml, "\n");
+        if (line_paras)
+          kmsstring_append (xml, "</p><p>\n");
         lines++;
         free (newline);
         } 
