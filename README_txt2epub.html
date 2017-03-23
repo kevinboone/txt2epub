@@ -10,14 +10,15 @@ Version 0.0.1, March 2017
 <code>txt2epub</code> is a command-line utility for Linux,
 for converting one
 or more plain text files into an EPUB document. It will insert the
-standard author/title meta-data, and can include a cover image.
-Limited formatting is possible using Markdown-style markup,
+standard author/title meta-data, generate a table of contents,
+and can include a cover image.
+Limited formatting is possible using Markdown-style text markup,
 or full XHTML. 
 <p/>
-This utility is intended as a quick way to covert books provided
+This utility is intended as a relatively quick way to covert books provided
 as plain text into a format that can be handled more easily by 
-e-readers. Although most portable devices that might be used
-for reading can handle plain text perfectly well, the
+e-readers. Although most portable reading devices and software
+can handle plain text perfectly well, the
 lack of meta-data or a cover image makes collections of
 such documents unwieldy.
 <p/>
@@ -27,6 +28,12 @@ to produce a commericial-quality EPUB novel,
 that will pass most publishers' validation checks. However, 
 books that have complex formatting, or embedded images, 
 need a more sophisticated approach. 
+<p/>
+One of the design goals of <code>txt2epub</code> is to produce
+"clean" documents, free of software-specific stylesheets and formatting.
+The EPUBs it creates will not specify fonts, 
+absolute text sizes, colours, margins, or layout. The way the text is rendered
+is thus completely under the control of the reader.  
 
 
 <h2>Example usage</h2>
@@ -44,10 +51,11 @@ entry in the table of contents.
 
 <h2>Prerequisites</h2>
 
-The only external runtime dependencies are on the standard 
+The only external dependencies are on the standard 
 linux <code>zip</code>
 utility, and the PCRE regular expression parsing library. Both
 should be available in the repositories of most Linux distributions. 
+For RHEL/Fedora: <code>yum install zip pcre-devel</code>.
 <p/>
 <code>txt2epub</code> will probably build and run on other
 Linux-like systems, but this has not been tested. 
@@ -82,6 +90,12 @@ include pre-formatted text.
 <p/>
 These markdown constructions are turned into basic HTML 
 tags (not style classes).
+<p/>
+Note that Markdown-style markup cannot span lines. A very long italic
+passage, for example, must be rendered as a single line, or the
+italic marker repeated on subsequent lines. 
+<code>txt2epub</code> does not support Markdown list constructs, but 
+these could be created using (X)HTML tags, if desired.
 
 <h3>XHTML support</h3>
 
@@ -104,6 +118,17 @@ display text; in such cases you might get away with using ordinary
 HTML. However, it isn't strictly correct, and won't pass a
 publisher's validation checks.
  
+<h3>Table of contents</h3>
+
+<code>txt2epub</code> does not write a contents page in the document.
+However, it does write an NCX table of contents, which most readers
+will be able to display at any point whilst reading a book. The
+entries in the table of contents will be taken <i>directly</i> from
+the input filename, after removing any extension. So a nicely-formatted
+table of contents will require that the filenames are as a reader
+should see them, with capital letters where appropriate and spaces
+between words. 
+
 
 <h3>Input text formatting issues</h3>
 
@@ -144,13 +169,46 @@ SVG, or PNG formats.
 wrongly sized images, EPUB viewers vary in their willingness to 
 display them. 
 
+
+<h3>Splitting long documents</h3>
+
+<code>txt2epub</code> has no built-in support for splitting long
+text files into sections or chapters. There are many ways in which
+this might be done, and Linux already has useful utilities for doing it.
+<p/>
+Consider, for example, a long file called <code>fred.txt</code>, that
+is divided into sections headed by "Chapter 1", "Chapter 2", etc.
+This can be split into chapters like this:
+
+<pre class="codeblock">
+csplit -f chapter_ -b %02d.txt fred.txt /Chapter.*/ {*}
+</pre> 
+
+This command will create the files <code>chapter_00.txt</code>,
+<code>chapter_01.txt</code>, etc. These chapters can then be 
+assembled into an EPUB like this:
+
+<pre class="codeblock">
+txt2epub -a "Fred Blogs" -t "My Life as a Dog" -f -o blogs.epub\ chapter*.txt
+</pre> 
+
+(being careful about the use of the filename wildcard, as discussed
+above.)
+<p/>
+The <code>-f</code> switch instructs <code>txt2epub</code> to use the
+first line of each file as a chapter heading, both in formatting and
+in the table of contents. This works because the use of csplit ensures
+that every file (with the possible exception of the first) begins
+with the specified pattern. 
+
 <h2>Bugs and limitations</h2>
+
 
 <code>txt2epub</code> presently does not remove unnecessary byte-order
 markers and similar encoding detritus from text files. 
 <p/>
 Users should be wary of using constructions like "book*.txt" to include
-many files. While Linux shells usually present files in alphanumeric order,
+lists of files. While Linux shells usually present files in alphanumeric order,
 subtleties like locale and collation settings can modify this.
 <p/>
 Files created by this utility will not necessarily pass the validation
@@ -167,7 +225,7 @@ reader takes much notice of it.
 
 <h2>More information</h2>
 
-More detailed usage information is avaialble in the manual:
+More detailed command-line usage information is avaialble in the manual:
 <code>man txt2epub</code>.
 
 

@@ -6,7 +6,10 @@ Remove BOM from input files?
 
 EPUB Book is still created, even if none of the input files can be read
 
-Fix: Extension is ".zip" if output file has no extension
+Include an XHTML contents page
 
 Allow full-page images to be inserted, just by providing an image filename
 in the file sequence
+
+Fix: Extension is ".zip" if output file has no extension
+

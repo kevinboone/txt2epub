@@ -433,7 +433,7 @@ static char *format_line (const char *line, BOOL indent_is_para,
 ==========================================================================*/
 // TODO -- stdin
 char *text_file_to_xhtml (const char *textfile, const char *title, 
-     BOOL indent_is_para, BOOL markdown)
+     BOOL indent_is_para, BOOL markdown, BOOL first_is_title)
   {
   kmslog_info ("Processing file %s", textfile);
 
@@ -455,6 +455,7 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
   if (f)
     {
     BOOL done = FALSE;
+    int lines = 0;
     do
       {
       size_t n = 0;
@@ -473,8 +474,18 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
           kmsstring_append (xml, "</p><p>\n");
           }
         char *newline = format_line (line, indent_is_para, markdown);
-        kmsstring_append (xml, newline);
+        if (first_is_title && (lines == 0))
+          {
+          kmsstring_append (xml, "<h1>");
+          kmsstring_append (xml, newline);
+          kmsstring_append (xml, "</h1>");
+          }
+        else
+          {
+          kmsstring_append (xml, newline);
+          }
         kmsstring_append (xml, "\n");
+        lines++;
         free (newline);
         } 
       if (line) free (line);

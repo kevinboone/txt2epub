@@ -46,20 +46,61 @@ int string_to_file (const char *str, const char *file)
 
 
 /*==========================================================================
+file_get_first_line
+Read the first line in a file. Returns NULL if the file cannot be read
+==========================================================================*/
+char *file_get_first_line (char *filename)
+  {
+  char *ret = NULL;
+  FILE *f = fopen (filename, "r");
+  if (f)
+    {
+    char *line;
+    size_t n = 0;
+    if (getline (&line, &n, f) > 0) 
+      ret = line;
+    fclose (f);
+    }
+  return ret;
+  }
+ 
+
+/*==========================================================================
 make_chapter_list
 Use the filenames as a list of chapter names
 ==========================================================================*/
-KMSList *make_chapter_list (char **argv, int argc, int offset)
+KMSList *make_chapter_list (char **argv, int argc, int offset, 
+    BOOL firstlines)
   {
   KMSList *ch_list = kmslist_create_strings();
 
-  int i;
-  for (i = offset; i < argc; i++)
+  if (firstlines)
     {
-    char *ch = strdup (argv[i]);
-    char *p = strrchr (ch, '.');
-    if (p) *p = 0;
-    kmslist_append (ch_list, ch); 
+    int i;
+    for (i = offset; i < argc; i++)
+      {
+      char *ch = file_get_first_line (argv[i]); 
+      if (!ch)
+        {
+        char *filename = basename (argv[i]);
+        ch = strdup (filename);
+        char *p = strrchr (ch, '.');
+        if (p) *p = 0;
+        }
+      kmslist_append (ch_list, ch); 
+      }
+    }
+  else
+    {
+    int i;
+    for (i = offset; i < argc; i++)
+      {
+      char *filename = basename (argv[i]);
+      char *ch = strdup (filename);
+      char *p = strrchr (ch, '.');
+      if (p) *p = 0;
+      kmslist_append (ch_list, ch); 
+      }
     }
 
   return ch_list;
@@ -73,6 +114,7 @@ int main (int argc, char **argv)
   {
   static BOOL show_version = FALSE;
   static BOOL show_usage = FALSE;
+  static BOOL firstlines = FALSE;
   static int loglevel = ERROR;
   char *epub_file = NULL;
   char *book_title = NULL;
@@ -87,6 +129,7 @@ int main (int argc, char **argv)
    {
      {"author", required_argument, NULL, 'a'},
      {"cover-image", required_argument, NULL, 'c'},
+     {"first-lines", no_argument, &firstlines, 'f'},
      {"help", no_argument, &show_usage, '?'},
      {"loglevel", required_argument, NULL, 0},
      {"output-file", required_argument, NULL, 'o'},
@@ -101,7 +144,7 @@ int main (int argc, char **argv)
   while (1)
    {
    int option_index = 0;
-   opt = getopt_long (argc, argv, "vh?o:t:a:l:imc:",
+   opt = getopt_long (argc, argv, "vh?o:t:a:l:imc:f",
      long_options, &option_index);
 
    if (opt == -1) break;
@@ -111,6 +154,8 @@ int main (int argc, char **argv)
      case 0:
         if (strcmp (long_options[option_index].name, "version") == 0)
           show_version = TRUE;
+        else if (strcmp (long_options[option_index].name, "first-lines") == 0)
+          firstlines = TRUE;
         else if (strcmp (long_options[option_index].name, "help") == 0)
           show_usage = TRUE;
         else if (strcmp (long_options[option_index].name, "loglevel") == 0)
@@ -136,6 +181,7 @@ int main (int argc, char **argv)
 
      case 'a': book_author = strdup (optarg); break;
      case 'c': cover_image = strdup (optarg); break;
+     case 'f': firstlines = TRUE; break;
      case 'i': indent_is_para = FALSE; break;
      case 'l': book_language = strdup (optarg); break;
      case 'o': epub_file = strdup (optarg); break;
@@ -154,6 +200,7 @@ int main (int argc, char **argv)
     printf ("     --loglevel N       log verbosity, 0 (default) - 3\n");
     printf ("  --ignore-indent       don't break paragraph on indent\n");
     printf ("  --ignore-markdown     do not respect Markdown formatting\n");
+    printf ("  -f,--first-lines      first line is chapter heading\n");
     printf ("  -l,--language A       set book language (default: en)\n");
     printf ("  -t,--title A          set book title (default: filename)\n");
     printf ("  -v,--version          show version information\n");
@@ -299,7 +346,8 @@ int main (int argc, char **argv)
 	    string_to_file ("application/epub+zip", mimetype);
 	    free (mimetype);
  
-            KMSList *chapter_list = make_chapter_list (argv, argc, optind); 
+            KMSList *chapter_list = make_chapter_list (argv, argc, optind, 
+              firstlines); 
 	     
 	    char *tocncx;
 	    char *tocncx_ncx = epub_make_toc_ncx (chapter_list, book_title); 
@@ -322,7 +370,7 @@ int main (int argc, char **argv)
               char *title = kmslist_get (chapter_list, i);
 	      asprintf (&file, "%s/file%d.html", working_dir, i);
 	      char *file_html = text_file_to_xhtml (argv [optind+i], title,
-                indent_is_para, markdown);
+                indent_is_para, markdown, firstlines);
 	      if (string_to_file (file_html, file))
                 {
                 kmslog_error 
