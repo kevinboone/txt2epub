@@ -501,7 +501,7 @@ static char *format_line (const char *line, BOOL indent_is_para,
 // TODO -- stdin
 char *text_file_to_xhtml (const char *textfile, const char *title, 
      BOOL indent_is_para, BOOL markdown, BOOL first_is_title, BOOL line_paras,
-     BOOL remove_pagenum)
+     BOOL remove_pagenum, BOOL para_indent)
   {
   kmslog_info ("Processing file %s", textfile);
 
@@ -512,6 +512,18 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
   kmsstring_append (xml, "<head>\n");
   kmsstring_append_printf (xml, "<title>%s</title>\n", title);
   kmsstring_append (xml, "</head>\n");
+//add indent
+  if (para_indent) 
+  {
+    kmsstring_append (xml, "<style>\n");
+    kmsstring_append (xml, "p {\n ");
+    kmsstring_append (xml, " text-indent: 1.5em;\n");
+    kmsstring_append (xml, " margin-bottom: 0em;\n");
+    kmsstring_append (xml, " margin-top: 0em;\n");
+    kmsstring_append (xml, "}\n");
+    kmsstring_append (xml, "</style>\n");
+  }
+///////////
   kmsstring_append (xml, "<body>\n");
   kmsstring_append (xml, "<p>\n");
 
@@ -577,6 +589,5 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
   kmsstring_destroy (xml);
   return ss; 
   }
-
 
 
