@@ -1,5 +1,5 @@
 # fork
-This is a fork from the kevinboone/txt2epub program.  The update adds a paragraph indent feature (enabled with -p or --para-indent).  When enabled, the text will be formatted so that paragraphs are indented with no blank line space between.  The update requires minor changes to the files main.c, text.c, and text.h.  The locations of the changes are documented above the code block (click the ... box).
+This is a fork from the kevinboone/txt2epub program.  The update adds a paragraph indent feature (enabled with -p or --para-indent).  When enabled, the text will be formatted so that paragraphs are indented with no blank line space between.  The update requires minor changes to the files main.c, text.c, and text.h.  The locations of the changes are documented above the code block for each file (click the 3-dots box ...).
 
 # txt2epub
 
