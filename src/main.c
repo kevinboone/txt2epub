@@ -116,6 +116,7 @@ int main (int argc, char **argv)
   static BOOL show_usage = FALSE;
   static BOOL firstlines = FALSE;
   static BOOL extra_para = FALSE;
+  static BOOL para_indent = FALSE;
   static BOOL remove_pagenum = FALSE;
   static int loglevel = ERROR;
   char *epub_file = NULL;
@@ -130,6 +131,7 @@ int main (int argc, char **argv)
      {"author", required_argument, NULL, 'a'},
      {"cover-image", required_argument, NULL, 'c'},
      {"first-lines", no_argument, &firstlines, 'f'},
+     {"para-indent", no_argument, NULL, 0},
      {"help", no_argument, &show_usage, '?'},
      {"loglevel", required_argument, NULL, 0},
      {"output-file", required_argument, NULL, 'o'},
@@ -149,7 +151,7 @@ int main (int argc, char **argv)
   while (1)
    {
    int option_index = 0;
-   opt = getopt_long (argc, argv, "vh?o:t:a:l:imc:fxr",
+   opt = getopt_long (argc, argv, "vhp?o:t:a:l:imc:fxr",
      long_options, &option_index);
 
    if (opt == -1) break;
@@ -182,6 +184,8 @@ int main (int argc, char **argv)
           indent_is_para = FALSE; 
         else if (strcmp (long_options[option_index].name, "extra-para") == 0)
           extra_para = TRUE; 
+        else if (strcmp (long_options[option_index].name, "para-indent") == 0)
+          para_indent = TRUE; 
         else if (strcmp (long_options[option_index].name, "ignore-markdown") 
                == 0)
           markdown = FALSE; 
@@ -195,6 +199,7 @@ int main (int argc, char **argv)
      case 'i': indent_is_para = FALSE; break;
      case 'l': book_language = strdup (optarg); break;
      case 'o': epub_file = strdup (optarg); break;
+     case 'p': para_indent = TRUE; break;
      case 'm': markdown = FALSE; break;
      case 'r': remove_pagenum = TRUE; break;
      case 't': book_title = strdup (optarg); break;
@@ -219,6 +224,7 @@ int main (int argc, char **argv)
     printf ("  -t,--title A          set book title (default: filename)\n");
     printf ("  -v,--version          show version information\n");
     printf ("  -o,--output-file      EPUB output filename\n");
+    printf ("  -p,--para-indent      Paragraph indent replaces blank line\n");
     printf ("  -x,--extra-para       Every input line is a paragraph\n");
     printf ("  -?                    show this message\n");
     exit (0);
@@ -388,7 +394,7 @@ int main (int argc, char **argv)
 	      asprintf (&file, "%s/file%d.html", working_dir, i);
 	      char *file_html = text_file_to_xhtml (argv [optind+i], title,
                 indent_is_para, markdown, firstlines, extra_para, 
-                remove_pagenum);
+                remove_pagenum, para_indent);
 	      if (string_to_file (file_html, file))
                 {
                 kmslog_error 
@@ -451,6 +457,5 @@ int main (int argc, char **argv)
 
   return ret;
   }
-
 
 
