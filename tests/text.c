@@ -24,6 +24,7 @@
 
 static pcre *re_italic, *re_bold, *re_indent,
             *re_h1, *re_h2, *re_h3, *re_br, *re_pagenum;
+BOOL flag1;
 
 /*==========================================================================
   strip_cr 
@@ -166,7 +167,11 @@ while (!done)
     subs [vec[1] - vec[0] - 2] = 0;
     kmsstring_append (s, "</p>");
     kmsstring_append (s, "");
-    kmsstring_append (s, "<p>");
+    if (flag1){
+    kmsstring_append (s, "<p class=\"first-in-chapter\">"); //need class here for 1st line
+    }else{
+    kmsstring_append (s, "<p>"); 
+    }
     free (subs);
     temp = strdup (input + vec[1]);
     free (temp);
@@ -516,11 +521,14 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
   if (para_indent) 
   {
     kmsstring_append (xml, "<style>\n");
-    kmsstring_append (xml, "p {\n ");
+    kmsstring_append (xml, "p {\n");
     kmsstring_append (xml, " text-indent: 1.5em;\n");
     kmsstring_append (xml, " margin-bottom: 0em;\n");
     kmsstring_append (xml, " margin-top: 0em;\n");
     kmsstring_append (xml, "}\n");
+    kmsstring_append (xml, "p.first-in-chapter {\n");
+    kmsstring_append (xml, " text-indent: 0;\n");
+    kmsstring_append (xml, "}\n"); 
     kmsstring_append (xml, "</style>\n");
   }
 ///////////
@@ -551,7 +559,7 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
           }
         if (strlen (line) <= 1)
           {
-          kmsstring_append (xml, "</p><p>\n");
+          kmsstring_append (xml, "</p><p>\n"); //goes at end
           }
         char *newline = format_line (line, indent_is_para, markdown, 
           remove_pagenum);
@@ -560,10 +568,12 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
           kmsstring_append (xml, "<h1>");
           kmsstring_append (xml, newline);
           kmsstring_append (xml, "</h1>");
+          if (para_indent){flag1=TRUE;}else{flag1=FALSE;}
           }
         else
           {
-          kmsstring_append (xml, newline);
+          if (lines == 0 && para_indent){flag1=TRUE;} else {flag1=FALSE;}
+          kmsstring_append (xml, newline);    //p class needs to be here
           }
         kmsstring_append (xml, "\n");
         if (line_paras)
