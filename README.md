@@ -1,9 +1,6 @@
-# fork
-This is a fork from the kevinboone/txt2epub program.  The update adds a paragraph indent option (enabled with -p or --para-indent).  When enabled, the text will be formatted so that paragraphs are separated by indent instead of the blank line space in-between.  The update requires minor changes to the files main.c, text.c, and text.h.  The locations of the changes are documented above the code block for each file (click the 3-dots box [...] to expand and show changes).
-
 # txt2epub
 
-Version 0.0.1, March 2017
+Version 0.0.2, May 2023
 
 ## What is this?
 
@@ -258,7 +255,17 @@ digits. Unfortunately, while (for example) a single line containing
 "23" will be removed, "Page 23" won't. Documents with this kind
 of detritus may need more sophisticated pre-processing.
 
+### Changing paragraph output format
 
+By default `txt2epub` writes plain paragraph tags to delineate paragraphs
+in the output. Ebook readers usually render this formatting with a 
+blank line between paragraphs. Using the `--para-indent` switch will
+make the utility output a `<style>` header to set the paragraph 
+separation to a plain left indent, which can be help when reading on a 
+small screen. In general `txt2epub` does not try to control formatting,
+in the hope that viewer software will be sufficiently flexible as to
+allow the user to choose preferences. This -- paragraph separation --
+is an area when viewer software tends to fall short.
 
 ## Bugs and limitations
 
@@ -289,9 +296,14 @@ More detailed command-line usage information is avaialble in the manual:
 
 ## Legal, etc
 
-<code>txt2epub</code> is maintained by Kevin Boone, and distributed under the
-terms of the GNU Public Licence, version 3.0. Essentially, you may do
-whatever you like with it, provided the original author is acknowledged, and
-you accept the risks involved in its use. 
+<code>txt2epub</code> is maintained by Kevin Boone and other contributors, and
+distributed under the terms of the GNU Public Licence, version 3.0.
+Essentially, you may do whatever you like with it, provided the original
+authors are acknowledged, and you accept the risks involved in its use. 
 
+## Revisions
+
+0.0.2, May 2023
+
+Added `--para-indent` feature (contributed by KenH2000)
 

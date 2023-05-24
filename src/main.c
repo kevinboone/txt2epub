@@ -233,7 +233,7 @@ int main (int argc, char **argv)
   if (show_version)
     {
     printf ("txt2epub " VERSION "\n");
-    printf ("Copyright (c)2017 Kevin Boone\n");
+    printf ("Copyright (c)2017 Kevin Boone and other contributors\n");
     printf ("Distributed according to the terms of the GPL, v3.0\n");
     exit (0);
     }
