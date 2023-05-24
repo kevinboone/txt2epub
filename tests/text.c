@@ -572,7 +572,7 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
           }
         else
           {
-          flag1=FALSE;
+          if (lines == 0){flag1=TRUE;} else {flag1=FALSE;}
           kmsstring_append (xml, newline);    //p class needs to be here
           }
         kmsstring_append (xml, "\n");
@@ -599,6 +599,5 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
   kmsstring_destroy (xml);
   return ss; 
   }
-
 
 
