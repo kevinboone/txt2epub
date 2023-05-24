@@ -72,11 +72,8 @@ char *epub_make_toc_ncx (KMSList *ch_list, const char *book_title)
   for (i = 0; i < l; i++)
     {
     const char *ch_name = kmslist_get (ch_list, i);
-    char mystring[20];
-    //const char *playno = kmslist_get (ch_list ,i);
     //kmsstring_append_printf (xml, "<navPoint id=\"txt2epub-%d-%ld\">\n", time(NULL),rand());
-	sprintf(mystring, "%d", i+1);
-    kmsstring_append_printf (xml, "<navPoint id=\"num_%s\" playOrder=\"%s\">",mystring,mystring);
+    kmsstring_append_printf (xml, "<navPoint id=\"num_%d\" playOrder=\"%d\">",i+1,i+1);
     kmsstring_append (xml, "<navLabel>\n");
     kmsstring_append (xml, "<text>\n");
     kmsstring_append_printf (xml, "%s", ch_name);
