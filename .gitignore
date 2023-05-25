@@ -1,2 +1,4 @@
 build/
 txt2epub
+test/
+tests/chapter*

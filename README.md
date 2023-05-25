@@ -1,6 +1,6 @@
 # txt2epub
 
-Version 0.0.2, May 2023
+Version 0.0.3, May 2023
 
 ## What is this?
 
@@ -302,6 +302,11 @@ Essentially, you may do whatever you like with it, provided the original
 authors are acknowledged, and you accept the risks involved in its use. 
 
 ## Revisions
+
+0.0.3, May 2023
+
+Fixed a nasty bug where space indents were being processed in the first
+line of a file, causing the header to be split between paras
 
 0.0.2, May 2023
 

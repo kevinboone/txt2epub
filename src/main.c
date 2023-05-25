@@ -196,6 +196,7 @@ int main (int argc, char **argv)
      case 'a': book_author = strdup (optarg); break;
      case 'c': cover_image = strdup (optarg); break;
      case 'f': firstlines = TRUE; break;
+     case 'h': case '?': show_usage = TRUE; break;
      case 'i': indent_is_para = FALSE; break;
      case 'l': book_language = strdup (optarg); break;
      case 'o': epub_file = strdup (optarg); break;
@@ -205,7 +206,6 @@ int main (int argc, char **argv)
      case 't': book_title = strdup (optarg); break;
      case 'v': show_version = TRUE; break;
      case 'x': extra_para = TRUE; break;
-     case '?': show_usage = TRUE; break;
      default:  exit(-1);
      }
    }
@@ -216,9 +216,10 @@ int main (int argc, char **argv)
     printf ("  -a,--author A         set book author (default: unknown)\n");
     printf ("  -c,--cover-image F    use image file F as the cover\n");
     printf ("     --loglevel N       log verbosity, 0 (default) - 3\n");
-    printf ("  --ignore-indent       don't break paragraph on indent\n");
-    printf ("  --ignore-markdown     do not respect Markdown formatting\n");
+    printf ("     --ignore-indent    don't break paragraph on indent\n");
+    printf ("     --ignore-markdown  do not respect Markdown formatting\n");
     printf ("  -f,--first-lines      first line is chapter heading\n");
+    printf ("  -?, -h                show this message\n");
     printf ("  -l,--language A       set book language (default: en)\n");
     printf ("  -r,--remove-pagenum   try to remove page numbers\n");
     printf ("  -t,--title A          set book title (default: filename)\n");
@@ -226,14 +227,13 @@ int main (int argc, char **argv)
     printf ("  -o,--output-file      EPUB output filename\n");
     printf ("  -p,--para-indent      Paragraph indent replaces blank line\n");
     printf ("  -x,--extra-para       Every input line is a paragraph\n");
-    printf ("  -?                    show this message\n");
     exit (0);
     }
  
   if (show_version)
     {
     printf ("txt2epub " VERSION "\n");
-    printf ("Copyright (c)2017 Kevin Boone and other contributors\n");
+    printf ("Copyright (c)2017-2023 Kevin Boone and other contributors\n");
     printf ("Distributed according to the terms of the GPL, v3.0\n");
     exit (0);
     }

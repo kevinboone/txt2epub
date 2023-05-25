@@ -445,7 +445,7 @@ while (!done)
   // Note -- line may (in theory) be a magabyte long
 ==========================================================================*/
 static char *format_line (const char *line, BOOL indent_is_para, 
-    BOOL markdown, BOOL remove_pagenum)
+    BOOL markdown, BOOL remove_pagenum, BOOL first_line)
   {
   char *line1; 
 
@@ -476,19 +476,17 @@ static char *format_line (const char *line, BOOL indent_is_para,
     }
   free (line1);
   char *line4;
-  if (indent_is_para)
+  if (indent_is_para && !first_line)
+    {
+    // Don't process indents as para breaks if this is the first
+    //   line of the file
     line4 = text_subs_indent (md_out);
+    }
   else
     line4 = strdup (md_out); 
 
    char *line5 = strdup (line4);
-/*
-  char *line5;
-  if (TRUE)
-    line5 = text_subs_pagenum (line4);
-  else
-    line5 = strdup (line4); 
-*/
+
   free (line4);
 
   free (md_out);
@@ -551,10 +549,10 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
           }
         if (strlen (line) <= 1)
           {
-          kmsstring_append (xml, "</p><p>\n");
+          kmsstring_append (xml, "</p>\n");
           }
         char *newline = format_line (line, indent_is_para, markdown, 
-          remove_pagenum);
+          remove_pagenum, (lines == 0));
         if (first_is_title && (lines == 0))
           {
           kmsstring_append (xml, "<h1>");
@@ -565,6 +563,12 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
           {
           kmsstring_append (xml, newline);
           }
+
+        if (strlen (line) <= 1)
+          {
+          kmsstring_append (xml, "<p>\n");
+          }
+
         kmsstring_append (xml, "\n");
         if (line_paras)
           kmsstring_append (xml, "</p><p>\n");
