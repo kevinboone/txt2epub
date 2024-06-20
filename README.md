@@ -1,6 +1,6 @@
 # txt2epub
 
-Version 0.0.3, May 2023
+Version 0.0.4, June 2024 
 
 ## What is this?
 
@@ -302,6 +302,10 @@ Essentially, you may do whatever you like with it, provided the original
 authors are acknowledged, and you accept the risks involved in its use. 
 
 ## Revisions
+
+0.0.4, June 2024
+
+Tidied up Makefile, to work better with Gentoo
 
 0.0.3, May 2023
 
