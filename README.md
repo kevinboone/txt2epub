@@ -305,7 +305,8 @@ authors are acknowledged, and you accept the risks involved in its use.
 
 0.0.4, June 2024
 
-Tidied up Makefile, to work better with Gentoo
+Tidied up Makefile to work better with Gentoo. Fixed an error where later
+versions of gcc enforce 3-argument open() in certain usages 
 
 0.0.3, May 2023
 

@@ -350,7 +350,8 @@ int main (int argc, char **argv)
         //   but the epub file does not yet exist. So we have to create it
         //   so that realpath will work. And then we have to delete it again,
         //   else zip -r will fail, because it isn't a proper zipfile. Ugh.
-        int f = open (epub_file, O_WRONLY | O_CREAT | O_TRUNC);
+        int f = open (epub_file, O_WRONLY | O_CREAT | O_TRUNC, 
+          S_IRUSR | S_IWUSR);
         if (f > 0)
           {
 	  close (f);
