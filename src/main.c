@@ -355,7 +355,7 @@ int main (int argc, char **argv)
         if (f > 0)
           {
 	  close (f);
-	  char epub_path[1024];
+	  char epub_path[PATH_MAX];
 	  realpath (epub_file, epub_path); 
 	  unlink (epub_path);
 	  char *content;
