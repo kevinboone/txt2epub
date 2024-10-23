@@ -1,7 +1,5 @@
 Allow different author and author-file-as
 
-Put mimetype file first in archive, to satisfy fussy epubcheck validation
-
 Remove BOM from input files?
 
 EPUB Book is still created, even if none of the input files can be read

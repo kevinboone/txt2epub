@@ -1,37 +1,31 @@
 # txt2epub
 
-Version 0.0.4, June 2024 
+Version 0.0.5, October 2024 
 
 ## What is this?
 
-`txt2epub` is a command-line utility for Linux,
-for converting one
-or more plain text files into an EPUB document. It will insert the
-standard author/title meta-data, generate a table of contents,
-and can include a cover image.
-Limited formatting is possible using Markdown-style text markup,
-or full XHTML if required. 
-<p/>
-This utility is intended as a relatively quick way to convert books provided
-as plain text into a format that can be handled more easily by 
-e-readers. Although most portable reading devices and software
-can handle plain text perfectly well, the
-lack of meta-data or a cover image makes collections of
-such documents unwieldy.
+`txt2epub` is a command-line utility for Linux, for converting one or more
+plain text files into an EPUB document. It will insert the standard
+author/title meta-data, generate a table of contents, and can include a cover
+image.  Limited formatting is possible using Markdown-style text markup, or
+full XHTML if required. 
 
-Although it is not its main function,  
-`txt2epub` can be used with just a plain text editor
-to produce a commercial-quality EPUB novel, 
-that will pass most publishers' validation checks. However, 
-books that have complex formatting, or embedded images, 
-need a more sophisticated approach. 
+This utility is intended as a relatively quick way to convert books provided as
+plain text into a format that can be handled more easily by e-readers. Although
+most portable reading devices and software can handle plain text perfectly
+well, the lack of meta-data or a cover image makes collections of such
+documents unwieldy.
 
-One of the design goals of `txt2epub` is to produce "clean"
-documents, free of software-specific stylesheets and formatting.  The EPUBs it
-creates will not specify fonts, absolute text sizes, colours, margins, or
-layout. The way the text is
-rendered is thus completely under the control of the reader. Its output should
-thus be acceptably readable on screens of different sizes. 
+Although it is not its main function,  `txt2epub` can be used with just a plain
+text editor to produce a commercial-quality EPUB novel, that will pass most
+publishers' validation checks. However, books that have complex formatting, or
+embedded images, need a more sophisticated approach. 
+
+One of the design goals of `txt2epub` is to produce "clean" documents, free of
+software-specific stylesheets and formatting.  The EPUBs it creates will not
+specify fonts, absolute text sizes, colours, margins, or layout. The way the
+text is rendered is thus completely under the control of the reader. Its output
+should thus be acceptably readable on screens of different sizes. 
 
 
 ## Example usage
@@ -41,24 +35,19 @@ thus be acceptably readable on screens of different sizes.
       --cover-image ge.jpg\
       chapter01.txt chapter02.txt chapter03.txt\ ...
 
-Convert files `chapter01.txt`, etc., into an 
-EPUB document, setting the 
-author and title meta-data appropriately. Each file will receive an
-entry in the table of contents. The image `ge.jpg` will
-form the book cover. 
-
+Convert files `chapter01.txt`, etc., into an EPUB document, setting the author
+and title meta-data appropriately. Each file will receive an entry in the table
+of contents. The image `ge.jpg` will form the book cover. 
 
 ## Prerequisites
 
-The only external dependencies are on the standard 
-linux `zip`
-utility, and the PCRE regular expression parsing library. Both
-should be available in the repositories of most Linux distributions. 
-For RHEL/Fedora: `yum install zip pcre-devel`.
+The only external dependencies are on the standard linux `zip` utility, and the
+PCRE regular expression parsing library. Both should be available in the
+repositories of most Linux distributions.  For RHEL/Fedora: `yum install zip
+pcre-devel`.
 
-`txt2epub` will probably build and run on other
-Linux-like systems, but this has not been tested. 
-
+`txt2epub` will probably build and run on other Linux-like systems, but this
+has not been tested. 
 
 ## Building and installing
 
@@ -131,7 +120,7 @@ the input filename, after removing any extension. So a nicely-formatted
 table of contents will require that the filenames are as a reader
 should see them, with capital letters where appropriate and spaces
 between words. 
-<p/>
+
 An alternative approach to generating a table of contents is
 to ensure that the first line of each file is a chapter heading,
 and use the `--first-lines` switch. This will also format
@@ -144,7 +133,8 @@ E-book text files tend to be formatted in one of four ways:
 * One very long line per paragraph, with a blank line between each paragraph
 * One very long line per paragraph, with no blank lines between paragraphs
 * Variable-length lines with blank lines to indicate paragraph breaks
-* Variable-length lines with no blanks; paragraph breaks are indicated by white-space intended lines
+* Variable-length lines with no blanks; paragraph breaks are indicated by 
+  white-space intended lines
 
 No special effort is required to handle the first type. The second
 type will be formatted by most readers as a solid block of uninterrupted
@@ -176,7 +166,7 @@ suggest that a cover image should be 590 pixels wide by 750 high. No
 check is made that the image meets this guideline -- it is simply
 copied into the EPUB. An error message will be shown if the image file
 does not exist, but the EPUB will still be created.
-<p/>
+
 The EPUB specification states that images files must be in JPEG, GIF,
 SVG, or PNG formats. No checks are made that this rule is being followed --
 `txt2epub` will install images of any type but, as with
@@ -277,17 +267,20 @@ lists of files. While Linux shells usually present files in alphanumeric order,
 subtleties like locale and collation settings can modify this. It may be 
 safer to list the files explicitly.
 
-Files created by this utility will not necessarily pass the validation
-in  
-`epubcheck`
-because the "mimetype" file is not always the first in the archive. This
-can be fixed if it causes problems with readers; so far none have been
-reported.
+Files created by this utility should (since version 0.0.5) pass the validation
+in `epubcheck` that the `mimetype` file is the first in the archive, and
+is uncompressed. It should now also pass checks that the UUIDs in the OPF
+and NCX contents are value and match.
 
 `txt2epub` does not write a "guide" section in the 
 NCX table-of-contents. This is optional and, so far as I know, no EPUB
 reader takes much notice of it. 
 
+Where the EPUB specification calls for a globally-unique ID, txt2epub makes one
+from the time and process ID. This is, of course, not guaranteed to be globally
+unique. If you convert a large number of documents in a batch, these UUID tags
+will all end up the same, at least if the conversions happen within one second.
+So far as I know, no EPUB reader is bothered by this. 
 
 ## More information
 
@@ -303,17 +296,27 @@ authors are acknowledged, and you accept the risks involved in its use.
 
 ## Revisions
 
+0.0.5, October 2025
+
+- Changed the way the mimetype file is stored, to suit fussy checkers
+- Fixed broken manpage
+- Fixed the "NCX id doesn't match OPF id" message from fussy checkers 
+- Fixed the "Missing play order in nav point element" message from
+  Okular
+
 0.0.4, June 2024
 
-Tidied up Makefile to work better with Gentoo. Fixed an error where later
-versions of gcc enforce 3-argument open() in certain usages 
+- Tidied up Makefile to work better with Gentoo. 
+- Fixed an error where later versions of gcc enforce 3-argument open() 
+  in certain usages 
 
 0.0.3, May 2023
 
-Fixed a nasty bug where space indents were being processed in the first
-line of a file, causing the header to be split between paras
+- Fixed a nasty bug where space indents were being processed in the first
+  line of a file, causing the header to be split between paras
 
 0.0.2, May 2023
 
-Added `--para-indent` feature (contributed by KenH2000)
+- Added `--para-indent` feature (contributed by KenH2000)
+
 

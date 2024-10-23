@@ -1,7 +1,7 @@
 /*==========================================================================
   txt2epub
   epub.c
-  Copyright *c)201 Kevin Boone, GPL3.0 
+  Copyright (c)2024 Kevin Boone, GPL3.0 
 ==========================================================================*/
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -52,16 +52,21 @@ const char *get_mime_type_by_extension (const char *file)
 /*==========================================================================
   make_toc_ncx
 ==========================================================================*/
-char *epub_make_toc_ncx (KMSList *ch_list, const char *book_title)
+char *epub_make_toc_ncx (KMSList *ch_list, const char *book_title, long pid, 
+       long tim)
   {
   if (!book_title) book_title = "unknown";
 
   KMSString *xml = kmsstring_create_empty();
 
   kmsstring_append (xml, "<?xml version=\"1.0\"  encoding=\"UTF-8\"?>\n");
-  kmsstring_append (xml, "<ncx version=\"2005-1\" xml:lang=\"en\" xmlns=\"http://www.daisy.org/z3986/2005/ncx/\">\n");
+  kmsstring_append (xml, "<ncx version=\"2005-1\" "
+     "xml:lang=\"en\" xmlns=\"http://www.daisy.org/z3986/2005/ncx/\">\n");
 
-  kmsstring_append (xml, "<head><meta name=\"dtb:uid\" content=\"isbn\"/><meta name=\"dtb:depth\" content=\"1\"/></head>\n");
+  kmsstring_append_printf (xml, "<head><meta name=\"dtb:uid\" "
+     "content=\"%08X-%04X-%04X-%04X-%04X%08X\"/><meta name=\"dtb:depth\" "
+     "content=\"1\"/></head>\n",
+    pid, 0, 0, 0, 0, tim);
 
   kmsstring_append_printf (xml, "<docTitle><text>%s</text></docTitle>", 
    book_title);
@@ -72,8 +77,8 @@ char *epub_make_toc_ncx (KMSList *ch_list, const char *book_title)
   for (i = 0; i < l; i++)
     {
     const char *ch_name = kmslist_get (ch_list, i);
-    kmsstring_append_printf (xml, "<navPoint id=\"txt2epub-%d-%ld\">\n", time(NULL), 
-     rand());
+    kmsstring_append_printf (xml, "<navPoint id=\"txt2epub-%d-%ld\" "
+      "playOrder=\"%d\" >\n", time(NULL), rand(), i + 1);
     kmsstring_append (xml, "<navLabel>\n");
     kmsstring_append (xml, "<text>\n");
     kmsstring_append_printf (xml, "%s", ch_name);
@@ -96,7 +101,8 @@ char *epub_make_toc_ncx (KMSList *ch_list, const char *book_title)
   make_content_opf
 ==========================================================================*/
 char *epub_make_content_opf (const int files, const char *title, 
-     const char *author, const char *language, const char *cover_basename)
+     const char *author, const char *language, const char *cover_basename, 
+     long pid, long time)
   {
   if (!title) title = "unknown";
   if (!author) author = "unknown";
@@ -105,13 +111,20 @@ char *epub_make_content_opf (const int files, const char *title,
   KMSString *xml = kmsstring_create_empty();
 
   kmsstring_append (xml, "<?xml version=\"1.0\"  encoding=\"UTF-8\"?>\n");
-  kmsstring_append (xml, "<package xmlns=\"http://www.idpf.org/2007/opf\" version=\"2.0\" unique-identifier=\"uuid_id\">\n");
-  kmsstring_append (xml, "<metadata xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:opf=\"http://www.idpf.org/2007/opf\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n");
+  kmsstring_append (xml, "<package xmlns=\"http://www.idpf.org/2007/opf\" "
+    "version=\"2.0\" unique-identifier=\"uuid_id\">\n");
+  kmsstring_append (xml, "<metadata xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+    "xmlns:opf=\"http://www.idpf.org/2007/opf\" "
+    "xmlns:dcterms=\"http://purl.org/dc/terms/\" "
+    "xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n");
   // TODO -- author, etc
-  kmsstring_append_printf (xml, "<dc:identifier id=\"uuid_id\" opf:scheme=\"uuid\">%d-%ld</dc:identifier>\n", getpid(), time(NULL)); 
+  kmsstring_append_printf (xml, "<dc:identifier id=\"uuid_id\" "
+    "opf:scheme=\"uuid\">%08X-%04X-%04X-%04X-%04X%08X</dc:identifier>\n", 
+    pid, 0, 0, 0, 0, time); 
   kmsstring_append_printf (xml, "<dc:title>%s</dc:title>\n", title); 
   kmsstring_append_printf (xml, "<dc:language>%s</dc:language>\n", language); 
-  kmsstring_append_printf (xml, "<dc:creator opf:role=\"aut\" opf:file-as=\"%s\">%s</dc:creator>\n", author, author); 
+  kmsstring_append_printf (xml, "<dc:creator opf:role=\"aut\" "
+    "opf:file-as=\"%s\">%s</dc:creator>\n", author, author); 
   kmsstring_append (xml, "</metadata>\n"); 
 
   kmsstring_append (xml, "<manifest>\n"); 
@@ -132,7 +145,8 @@ char *epub_make_content_opf (const int files, const char *title,
       "<item href=\"file%d.html\" id=\"file%d\" media-type=\"application/xhtml+xml\"/>\n", 
       i, i); 
     }
-  kmsstring_append (xml, "<item href=\"toc.ncx\" media-type=\"application/x-dtbncx+xml\" id=\"ncx\"/>\n");
+  kmsstring_append (xml, "<item href=\"toc.ncx\" "
+    "media-type=\"application/x-dtbncx+xml\" id=\"ncx\"/>\n");
   kmsstring_append (xml, "</manifest>\n"); 
 
   kmsstring_append (xml, "<spine toc=\"ncx\">\n"); 
@@ -159,7 +173,10 @@ char *epub_make_content_opf (const int files, const char *title,
 ==========================================================================*/
 char *epub_make_container_xml (void)
   {
-  return strdup ("<?xml version=\"1.0\"?><container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\"><rootfiles><rootfile full-path=\"content.opf\" media-type=\"application/oebps-package+xml\"/></rootfiles></container>");
+  return strdup ("<?xml version=\"1.0\"?><container version=\"1.0\" "
+     "xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\">"
+     "<rootfiles><rootfile full-path=\"content.opf\" "
+     "media-type=\"application/oebps-package+xml\"/></rootfiles></container>");
   }
 
 

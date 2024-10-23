@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <pcre.h>
+#include <time.h>
 #include <sys/stat.h>
 #include "kmsconstants.h" 
 #include "kmslogging.h" 
@@ -359,9 +360,11 @@ int main (int argc, char **argv)
 	  realpath (epub_file, epub_path); 
 	  unlink (epub_path);
 	  char *content;
+          long pid = (long)getpid();
+          long tim = (long)time (NULL);
 	  asprintf (&content, "%s/content.opf", working_dir);
 	  char *content_opf = epub_make_content_opf (file_count, book_title,
-            book_author, book_language, cover_basename); 
+            book_author, book_language, cover_basename, pid, tim); 
 	  ret = string_to_file (content_opf, content);
 	  if (ret == 0)
 	    { 
@@ -374,7 +377,8 @@ int main (int argc, char **argv)
               firstlines); 
 	     
 	    char *tocncx;
-	    char *tocncx_ncx = epub_make_toc_ncx (chapter_list, book_title); 
+	    char *tocncx_ncx = epub_make_toc_ncx (chapter_list, book_title, 
+               pid, tim); 
 	    asprintf (&tocncx, "%s/toc.ncx", working_dir);
 	    string_to_file (tocncx_ncx, tocncx);
 	    free (tocncx);
@@ -406,6 +410,20 @@ int main (int argc, char **argv)
 	      }
 
 	    kmslog_debug ("Creating zipfile %s", epub_path);
+
+            // Sigh. To satisfy fussy checkers, the mimetype files must be first in the archive, and uncompressed
+
+	    asprintf (&cmd, "cd \"%s\"; zip -q -X -0 \"%s\" mimetype", 
+              working_dir, epub_path);
+	    system (cmd);
+	    free (cmd);
+
+            // So now we delete mimetype, and store everything else with default compression
+
+	    asprintf (&cmd, "cd \"%s\"; rm mimetype", 
+              working_dir);
+	    system (cmd);
+	    free (cmd);
 
 	    asprintf (&cmd, "cd \"%s\"; zip -q -r \"%s\" .", 
               working_dir, epub_path);
