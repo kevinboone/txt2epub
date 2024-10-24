@@ -166,6 +166,14 @@ By default,
 like _italic_ and *bold*. This behaviour can be turned off
 using --ignore-markdown. 
 
+.SS XHTML input
+
+If an input file has a name ending '.xhtml', it is not modified
+at all. The file's contents are inserted into the standard
+EPUB XML header and footer, however. Authors can therefore 
+prepare input with XHTML formatting, rather than the simple 
+Markdown that applies to text files. 
+
 .SH BUGS AND LIMITATIONS
 
 No check is made that the input file really is text, or even that 

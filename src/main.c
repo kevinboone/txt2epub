@@ -234,7 +234,7 @@ int main (int argc, char **argv)
   if (show_version)
     {
     printf ("txt2epub " VERSION "\n");
-    printf ("Copyright (c)2017-2023 Kevin Boone and other contributors\n");
+    printf ("Copyright (c)2017-2024 Kevin Boone and other contributors\n");
     printf ("Distributed according to the terms of the GPL, v3.0\n");
     exit (0);
     }
@@ -397,7 +397,7 @@ int main (int argc, char **argv)
 	      char *file;
               char *title = kmslist_get (chapter_list, i);
 	      asprintf (&file, "%s/file%d.html", working_dir, i);
-	      char *file_html = text_file_to_xhtml (argv [optind+i], title,
+	      char *file_html = input_file_to_xhtml (argv [optind+i], title,
                 indent_is_para, markdown, firstlines, extra_para, 
                 remove_pagenum, para_indent);
 	      if (string_to_file (file_html, file))

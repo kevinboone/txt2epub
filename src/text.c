@@ -439,6 +439,20 @@ while (!done)
   }
 
 
+/*==========================================================================
+  escape_html 
+==========================================================================*/
+static char *escape_html (const char *line)
+  {
+  KMSString *new_string = kmsstring_create (line);
+  // We have to do & first, as later substitutions will insert new & chars
+  kmsstring_substitute_all_in_place (new_string, "&", "&amp;");
+  kmsstring_substitute_all_in_place (new_string, ">", "&gt;");
+  kmsstring_substitute_all_in_place (new_string, "<", "&lt;");
+  char *ret = strdup (kmsstring_cstr (new_string)); 
+  kmsstring_destroy (new_string);
+  return ret;
+  }
 
 /*==========================================================================
   format_line 
@@ -447,12 +461,16 @@ while (!done)
 static char *format_line (const char *line, BOOL indent_is_para, 
     BOOL markdown, BOOL remove_pagenum, BOOL first_line)
   {
+  char *escaped_line = escape_html (line); 
+
   char *line1; 
 
   if (remove_pagenum)
-    line1 = text_subs_pagenum (line);
+    line1 = text_subs_pagenum (escaped_line);
   else
-    line1 = strdup (line); 
+    line1 = strdup (escaped_line); 
+
+  free (escaped_line);
 
   char *md_out;
   if (markdown)
@@ -474,8 +492,11 @@ static char *format_line (const char *line, BOOL indent_is_para,
     {
     md_out = strdup (line1);
     }
+
   free (line1);
+
   char *line4;
+
   if (indent_is_para && !first_line)
     {
     // Don't process indents as para breaks if this is the first
@@ -494,10 +515,13 @@ static char *format_line (const char *line, BOOL indent_is_para,
   }
 
 /*==========================================================================
-  textfile_to_html 
+  input_file_to_html 
+  If the input file is already XHTML we don't have to format it further --
+    we just apply the relevant EPUB header and footer. Everthing else is
+    assumed to be plain UTF8 text, which must be formated as XHTML.
 ==========================================================================*/
 // TODO -- stdin
-char *text_file_to_xhtml (const char *textfile, const char *title, 
+char *input_file_to_xhtml (const char *textfile, const char *title, 
      BOOL indent_is_para, BOOL markdown, BOOL first_is_title, BOOL line_paras,
      BOOL remove_pagenum, BOOL para_indent)
   {
@@ -525,6 +549,10 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
   kmsstring_append (xml, "<body>\n");
   kmsstring_append (xml, "<p>\n");
 
+  BOOL is_xhtml = FALSE;
+  if (strstr (textfile, ".xhtml"))
+    is_xhtml = TRUE;
+
   FILE *f;
   if (strcmp (textfile, "-") == 0)
     f = stdin;
@@ -541,39 +569,46 @@ char *text_file_to_xhtml (const char *textfile, const char *title,
       if (getline (&line, &n, f) < 0) done = TRUE;
       if (!done)
         {
-        strip_cr (line);
-        if (strlen (line) > 1)
+        if (is_xhtml)
           {
-          if (line[strlen(line) - 1] == 10)
-            line[strlen(line) - 1] = 0;
-          }
-        if (strlen (line) <= 1)
-          {
-          kmsstring_append (xml, "</p>\n");
-          }
-        char *newline = format_line (line, indent_is_para, markdown, 
-          remove_pagenum, (lines == 0));
-        if (first_is_title && (lines == 0))
-          {
-          kmsstring_append (xml, "<h1>");
-          kmsstring_append (xml, newline);
-          kmsstring_append (xml, "</h1>");
+	  kmsstring_append (xml, line);
           }
         else
           {
-          kmsstring_append (xml, newline);
-          }
+	  strip_cr (line);
+	  if (strlen (line) > 1)
+	    {
+	    if (line[strlen(line) - 1] == 10)
+	      line[strlen(line) - 1] = 0;
+	    }
+	  if (strlen (line) <= 1)
+	    {
+	    kmsstring_append (xml, "</p>\n");
+	    }
+	  char *newline = format_line (line, indent_is_para, markdown, 
+	    remove_pagenum, (lines == 0));
+	  if (first_is_title && (lines == 0))
+	    {
+	    kmsstring_append (xml, "<h1>");
+	    kmsstring_append (xml, newline);
+	    kmsstring_append (xml, "</h1>");
+	    }
+	  else
+	    {
+	    kmsstring_append (xml, newline);
+	    }
 
-        if (strlen (line) <= 1)
-          {
-          kmsstring_append (xml, "<p>\n");
-          }
+	  if (strlen (line) <= 1)
+	    {
+	    kmsstring_append (xml, "<p>\n");
+	    }
 
-        kmsstring_append (xml, "\n");
-        if (line_paras)
-          kmsstring_append (xml, "</p><p>\n");
+	  kmsstring_append (xml, "\n");
+	  if (line_paras)
+	    kmsstring_append (xml, "</p><p>\n");
+          free (newline);
+          }
         lines++;
-        free (newline);
         } 
       if (line) free (line);
       } while (!done); 

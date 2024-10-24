@@ -28,6 +28,8 @@ void         kmsstring_prepend (KMSString *self, const char *s);
 int          kmsstring_length (const KMSString *self);
 KMSString    *kmsstring_substitute_all (const KMSString *self, 
                 const char *search, const char *replace);
+void         kmsstring_substitute_all_in_place (KMSString *self, 
+                const char *search, const char *replace);
 void         kmsstring_delete (KMSString *self, const int pos, 
                 const int len);
 void         kmsstring_insert (KMSString *self, const int pos, 

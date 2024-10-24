@@ -1,6 +1,6 @@
 # txt2epub
 
-Version 0.0.5, October 2024 
+Version 0.0.6, October 2024 
 
 ## What is this?
 
@@ -44,7 +44,7 @@ of contents. The image `ge.jpg` will form the book cover.
 The only external dependencies are on the standard linux `zip` utility, and the
 PCRE regular expression parsing library. Both should be available in the
 repositories of most Linux distributions.  For RHEL/Fedora: `yum install zip
-pcre-devel`.
+pcre-devel`; for Debian/Ubuntu: `apt install libprce3-dev`.
 
 `txt2epub` will probably build and run on other Linux-like systems, but this
 has not been tested. 
@@ -76,35 +76,35 @@ A line that ends in two spaces (which may not be visible at all in a text
 editor) is terminated with a line-break. This is a simple way to
 include pre-formatted text.
 
-These markdown constructions are turned into basic (X)HTML 
+These markdown constructions are turned into basic XHTML 
 tags (not style classes).
 
 Note that Markdown-style markup cannot span lines. A very long italic
 passage, for example, must be rendered as a single line, or the
 italic marker repeated on subsequent lines. 
-`txt2epub` does not support Markdown list constructs, but 
-these could be created using (X)HTML tags, if desired.
+`txt2epub` does not support Markdown list or table constructs:
+more sophisticated formatting like this will need input supplied
+as proper XHTML. 
 
 ### XHTML support
 
-Any text files supplied to 
-`txt2epub` are just inserted into the body of an XHTML 
-document, as this is the presentation format that EPUB specifies.
-It follows that files can contain XHTML markup if necessary.
-XHTML is a stricter standard than HTML, and many ordinary HTML files will not
-pass muster -- a typical problem is not closing tags, or using
-the wrong letter case in tags.
+As of version 0.0.6, `txt2epub` distinguishes between input files
+that are already formatted as XHTNL, and everything else, which
+it assumes to be plain text. Any input file whose name ends in
+`.xhtml` is taken to be an XHTML file.
 
-Providing XHTML can be useful for heavily formatted pages such as a
-title page or dedication. However, the files provided should
-_not_ be full XHTML files --   
-`txt2epub` will write the proper XHTML header and footer.
-Instead, just provide the body text.
+This distinction is necessary, because plain text files can
+legitimately contain characters, like `>`, that have a specific
+meaning in XHTML. These characters have to be escaped. 
+Applying these escapes to an XHTML file will just break it.
 
-Many commercial e-readers use existing HTML rendering software to 
-display text; in such cases you might get away with using ordinary
-HTML. However, it isn't strictly correct, and won't pass a
-publisher's validation checks.
+What this change means is that, in 0.0.6 and later, it is no
+longer possible to supply a text file that has occasional
+HTML-like formatting in it. You can still use Markdown
+constructs like `_word_` and `*word*` to get basic emphasis.
+If you want more than this, you'll need to supply real XHTML
+text as input. There's no need to supply the EPUB header and
+footer -- `txt2epub` still generates that code.
  
 ### Table of contents
 
@@ -259,6 +259,11 @@ is an area when viewer software tends to fall short.
 
 ## Bugs and limitations
 
+This is a simple program, for simple applications. It is intended to be
+fast, and to use only limited resources. I originally wrote it for embedded
+applications. It is therefore rather unsophisticated, and offers little
+opportunity for customizing the text processing operations.
+
 `txt2epub` presently does not remove unnecessary byte-order
 markers and similar encoding detritus from text files. 
 
@@ -295,6 +300,10 @@ Essentially, you may do whatever you like with it, provided the original
 authors are acknowledged, and you accept the risks involved in its use. 
 
 ## Revisions
+
+0.0.6, October 2025
+
+- Fixed handling of HTML entities like ampersand in the text input
 
 0.0.5, October 2025
 

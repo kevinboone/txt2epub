@@ -202,7 +202,49 @@ void kmsstring_insert (KMSString *self, const int pos,
   self->str = buff;
   }
 
-
+/*==========================================================================
+kmsstring_replace_helper
+*==========================================================================*/
+static char *kmsstring_replace_helper (const char* s, 
+        const char* old_string, const char* new_string) 
+  { 
+  char *result; 
+  int i, count = 0; 
+  int new_stringlen = strlen (new_string); 
+  int old_stringlen = strlen (old_string); 
+ 
+  // Count the number of occurrences of the old string, so we can  
+  //   allocate enough memory for the new string
+  for (i = 0; s[i] != '\0'; i++) 
+    { 
+    if (strstr(&s[i], old_string) == &s[i]) 
+      { 
+      count++; 
+      i += old_stringlen - 1; 
+      } 
+    } 
+ 
+  // Create a new string with sufficient storage 
+  result = (char*)malloc 
+     (i + count * (new_stringlen - old_stringlen) + 1); 
+ 
+  // Now do the substitutions into the new string
+  i = 0; 
+  while (*s) 
+    { 
+    if (strstr (s, old_string) == s) 
+      { 
+      strcpy (&result[i], new_string); 
+      i += new_stringlen; 
+      s += old_stringlen; 
+      } 
+    else
+      result[i++] = *s++; 
+    } 
+ 
+  result[i] = '\0'; 
+  return result; 
+  } 
 
 /*==========================================================================
 kmsstring_substitute_all
@@ -210,22 +252,24 @@ kmsstring_substitute_all
 KMSString *kmsstring_substitute_all (const KMSString *self, 
     const char *search, const char *replace)
   {
-  KMSString *working = kmsstring_clone (self);
-  BOOL cont = TRUE;
-  while (cont)
-    {
-    int i = kmsstring_find (working, search);
-    if (i >= 0)
-      {
-      kmsstring_delete (working, i, strlen (search));
-      kmsstring_insert (working, i, replace);
-      }
-    else
-      cont = FALSE;
-    }
-  return working;
+  char *s = self->str;
+  char *s2 = kmsstring_replace_helper (s, search, replace);
+  KMSString *ret = kmsstring_create (s2);
+  free (s2);
+  return ret; 
   }
 
+/*==========================================================================
+kmsstring_substitute_all_in_place
+*==========================================================================*/
+void kmsstring_substitute_all_in_place (KMSString *self, 
+    const char *search, const char *replace)
+  {
+  char *s = self->str;
+  char *s2 = kmsstring_replace_helper (s, search, replace);
+  self->str = s2;
+  free (s);
+  }
 
 /*==========================================================================
   kmsstring_create_from_utf8_file 
