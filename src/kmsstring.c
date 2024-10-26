@@ -1,6 +1,7 @@
 /*==========================================================================
-kmediascanner
+epub2txt
 kmsstring.c
+A simple variable-length string
 Copyright (c)2017 Kevin Boone, GPLv3.0
 *==========================================================================*/
 
@@ -94,6 +95,20 @@ void kmsstring_append (KMSString *self, const char *s)
   int newlen = strlen (self->str) + strlen (s) + 2;
   self->str = realloc (self->str, newlen);
   strcat (self->str, s);
+  }
+
+
+/*==========================================================================
+kmsstring_append_c
+*==========================================================================*/
+void kmsstring_append_c (KMSString *self, const char c) 
+  {
+  if (self->str == NULL) self->str = strdup ("");
+  int oldlen = strlen (self->str);
+  int newlen = oldlen + 1;
+  self->str = realloc (self->str, newlen + 1);
+  self->str[oldlen] = c;
+  self->str[newlen] = 0; 
   }
 
 

@@ -118,6 +118,15 @@ very long lines one after another. In other cases it will usually
 produce unhappy results 
 .LP
 
+.TP
+.BI \-m,\-\-verbatim-marker
+sets the character that will be used to demarc 'verbatim' sections, which might
+include pre-formatted (X)HTML. The default is the back-tick, chosen because it has
+a similar meaning in Markdown. The verbatim marker can be a multi-byte character if
+required, and if the shell allows multi-byte characters as command-line arguments
+(most do).
+.LP
+
 
 .TP
 .BI -v,\-\-version
@@ -143,6 +152,9 @@ convert from ISO8859-1:
 .nf
 .B iconv\ -f\ iso8859-1\ -t\ utf8\ {input_file}\ >\ {output_file} 
 
+In particular, this utility makes no claims to be able to handle
+any files that use 8-bit 'extended ASCII' encodings.
+
 .SS Table of contents 
 
 \fItxt2epub\fR does not write a visible contents page in
@@ -157,7 +169,7 @@ input file.
 Input is assumed to consists of lines or aribtrary length, with
 paragraph breaks signalled either by a blank line, or an indent
 of three or more whitespace characters. Because some documents that
-have blank-line paragraphs have lines that accidentally start
+have blank-line paragraphs have lines which accidentally start
 with spaces, the use of indents as paragraph breaks can be
 turned off (--ignore-indents)
 
@@ -174,6 +186,10 @@ EPUB XML header and footer, however. Authors can therefore
 prepare input with XHTML formatting, rather than the simple 
 Markdown that applies to text files. 
 
+It is also possible to insert small amounts of XHTML into a plain
+text document, by surrounding it with verbatim markers. The marker
+defaults to the back-tick character, as in Markdown.
+
 .SH BUGS AND LIMITATIONS
 
 No check is made that the input file really is text, or even that 
@@ -184,6 +200,17 @@ Users should be wary of using constructions like "book*.txt" to include
 many files. While Linux shells usually present files in alphanumeric order,
 subtleties like locale and collation settings can modify this.
 
+No attempt will be made to convert the character encoding of any input
+file. 
+
+This is not a limitation of \fItxt2epub\fR, but simply a semantic problem:
+characters like the ampersand (&) have a special meaning to XHTML, so they
+have to be converted when they appear in text. So it isn't possible to enter
+characters using XHTML entities -- like \fI&pound\fR for the pound (currency)
+symbol. There's no particular need to do so, since there are Unicode symbols
+for all these entities, but sometimes they appear in text that has been
+ripped from HTML. If it's essentially to use XHTML entities, surround them
+with verbatim markers (default: back-tick) so they are not modified.
 
 .SH AUTHOR AND LEGAL
 \fItxt2epub\fR
@@ -191,11 +218,5 @@ is maintained by Kevin Boone, and is open source under the
 terms of the GNU Public Licence, version 3.0. 
 There is no warranty
 of any kind.
-
-
-.SH FURTHER INFORMATION 
-For more details, see 
-http://kevinboone.net/README_txt2epub.html.
-
 
 .\" end of file

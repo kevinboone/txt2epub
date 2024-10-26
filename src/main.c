@@ -28,7 +28,7 @@
 /*==========================================================================
   string_to_file 
 ==========================================================================*/
-int string_to_file (const char *str, const char *file)
+static int string_to_file (const char *str, const char *file)
   {
   int ret = 0;
   int f = open (file, O_WRONLY | O_CREAT | O_TRUNC, 0755);
@@ -50,7 +50,7 @@ int string_to_file (const char *str, const char *file)
 file_get_first_line
 Read the first line in a file. Returns NULL if the file cannot be read
 ==========================================================================*/
-char *file_get_first_line (char *filename)
+static char *file_get_first_line (char *filename)
   {
   char *ret = NULL;
   FILE *f = fopen (filename, "r");
@@ -70,7 +70,7 @@ char *file_get_first_line (char *filename)
 make_chapter_list
 Use the filenames as a list of chapter names
 ==========================================================================*/
-KMSList *make_chapter_list (char **argv, int argc, int offset, 
+static KMSList *make_chapter_list (char **argv, int argc, int offset, 
     BOOL firstlines)
   {
   KMSList *ch_list = kmslist_create_strings();
@@ -126,6 +126,7 @@ int main (int argc, char **argv)
   char *book_language = NULL;
   char *cover_image = NULL;
   char *cover_basename = NULL; 
+  char *verbatim_marker = strdup ("`"); 
 
   static struct option long_options[] = 
    {
@@ -140,6 +141,7 @@ int main (int argc, char **argv)
      {"ignore-markdown", no_argument, NULL, 'm'},
      {"remove-pagenum", required_argument, NULL, 'r'},
      {"title", required_argument, NULL, 't'},
+     {"verbatim-marker", required_argument, NULL, 'm'},
      {"extra-para", no_argument, NULL, 'x'},
      {"version", no_argument, &show_version, 'v'},
      {0, 0, 0, 0}
@@ -152,7 +154,7 @@ int main (int argc, char **argv)
   while (1)
    {
    int option_index = 0;
-   opt = getopt_long (argc, argv, "vhp?o:t:a:l:imc:fxr",
+   opt = getopt_long (argc, argv, "vhp?o:t:a:l:ic:fxrm:",
      long_options, &option_index);
 
    if (opt == -1) break;
@@ -181,6 +183,8 @@ int main (int argc, char **argv)
           cover_image = strdup (optarg);
         else if (strcmp (long_options[option_index].name, "language") == 0)
           book_language = strdup (optarg);
+        else if (strcmp (long_options[option_index].name, "verbatim-marker") == 0)
+          verbatim_marker = strdup (optarg);
         else if (strcmp (long_options[option_index].name, "ignore-index") == 0)
           indent_is_para = FALSE; 
         else if (strcmp (long_options[option_index].name, "extra-para") == 0)
@@ -202,8 +206,9 @@ int main (int argc, char **argv)
      case 'l': book_language = strdup (optarg); break;
      case 'o': epub_file = strdup (optarg); break;
      case 'p': para_indent = TRUE; break;
-     case 'm': markdown = FALSE; break;
+     //case 'm': markdown = FALSE; break; // Bo longer used
      case 'r': remove_pagenum = TRUE; break;
+     case 'm': free (verbatim_marker); verbatim_marker = strdup (optarg); break;
      case 't': book_title = strdup (optarg); break;
      case 'v': show_version = TRUE; break;
      case 'x': extra_para = TRUE; break;
@@ -291,7 +296,7 @@ int main (int argc, char **argv)
 
   if (ret == 0)
     {
-    text_init_regex();
+    text_init_regex (verbatim_marker);
 
     // At this point the output filename is known, so we can use it as
     //   the book title, unless a title is specified
@@ -469,6 +474,7 @@ int main (int argc, char **argv)
   if (book_title) free (book_title);
   if (book_author) free (book_author);
   if (book_language) free (book_language);
+  if (verbatim_marker) free (verbatim_marker);
   // I don't understand why I don't need to free at least one of the
   //  following, but valgrind says not
   //if (cover_image) free (cover_image);

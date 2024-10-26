@@ -1,4 +1,4 @@
-VERSION := 0.0.6
+VERSION := 0.0.7
 CC      := gcc
 LIBS    := -lpcre
 DESTDIR ?= /
@@ -30,6 +30,9 @@ install: $(TARGET)
 	mkdir -p ${BINDIR} ${MANDIR}/man1/
 	install -s -D -m 755 $(TARGET) ${BINDIR}
 	install -D -m 644 man1/* ${MANDIR}/man1/
+
+test: $(TARGET)
+	(cd tests; ./maketests.sh)
 
 -include $(DEPS)
 

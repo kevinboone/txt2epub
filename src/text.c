@@ -1,7 +1,8 @@
 /*==========================================================================
   txt2epub
   text.c
-  Copyright *c)201 Kevin Boone, GPL3.0 
+  General text-handling functions
+  Copyright (c)2021-24 Kevin Boone, GPL3.0 
 ==========================================================================*/
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -22,12 +23,27 @@
 #include "kmslist.h" 
 #include "text.h" 
 
-static pcre *re_italic, *re_bold, *re_indent,
+// We insert into the text file a single byte that represents the
+//  'verbatim' text sequence, which can be anything, of any length. The
+//  default is back-tick, whose meaning bere broadly aligns with its
+//  meaning in markdown. However, there's a case for using a unicode
+//  character here, which means we have to provide some way to use a
+//  multibyte sequence for the verbatim marker. But using a single-
+//  byte marker makes subsequent processing much easier and quicker.
+//  SO we convert the multi-byte marker into a single byte.
+//  The single byte must be one that cannot legitmately appear in
+//  UTF-8 text, like 0xC0. However, such a character _might_ appear
+//  in 8-bit ASCII files. But txt2epub makes no claim to be able
+//  to handle such files.
+#define VERBATIM_BYTE 0xC0
+
+static pcre *re_italic, *re_bold, *re_indent, *re_verbatim,
             *re_h1, *re_h2, *re_h3, *re_br, *re_pagenum;
 
 /*==========================================================================
   strip_cr 
-  // TODO -- remove them completely
+  // TODO -- remove them completely, rather than just turning them into
+  //  spaces
 ==========================================================================*/
 static void strip_cr (char *s)
   {
@@ -41,9 +57,10 @@ static void strip_cr (char *s)
 
 /*==========================================================================
   text_init_regex 
+  All the regular expressions we use are static, except the verbatim 
+  marker, which can be set on the command line.
 ==========================================================================*/
-
-void text_init_regex(void)
+void text_init_regex (const char *verbatim_marker)
   {
    const char *pcreErrorStr;
   int pcreErrorOffset = 0;
@@ -71,6 +88,9 @@ void text_init_regex(void)
 
   re_pagenum = pcre_compile ("^\\s\\s+\\d+", 0, 
     &pcreErrorStr, &pcreErrorOffset, NULL);
+
+  re_verbatim = pcre_compile (verbatim_marker, 0, 
+    &pcreErrorStr, &pcreErrorOffset, NULL);
   }
 
 
@@ -95,40 +115,48 @@ void text_cleanup_regex(void)
     pcre_free (re_br);
   if (re_pagenum)
     pcre_free (re_pagenum);
+  if (re_verbatim)
+    pcre_free (re_verbatim);
   }
 
 
 /*==========================================================================
+  TODO: all these 'text_subs_xxx' functions use essentially the same
+  logic. Ideally, I should write a single function, with relevant
+  arguments. Unfortunately, there's just enough disparity between these
+  functions to make this a little awkward. 
+==========================================================================*/
+/*==========================================================================
   text_subs_br
 ==========================================================================*/
-char *text_subs_br (const char *_input)
+static char *text_subs_br (const char *_input)
   {
   char *input = strdup (_input);
   BOOL done = FALSE;
   KMSString *s = kmsstring_create_empty ();
 
-while (!done)
-  {
-  int vec[10];
-  int count = pcre_exec (re_br, NULL, input, strlen (input),  
-     0, 0, vec, 10);         
-
-  if (count != 1) done = TRUE;
-  if (!done)
+  while (!done)
     {
-    char *temp = strdup (input);
-    temp[vec[0]] = 0;
-    kmsstring_append (s, temp);
-    free (temp);
-    char *subs = strdup (input+ vec[0]+1);
-    subs [vec[1] - vec[0] - 2] = 0;
-    kmsstring_append (s, "<br/>");
-    free (subs);
-    temp = strdup (input + vec[1]);
-    free (temp);
-    memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+    int vec[10];
+    int count = pcre_exec (re_br, NULL, input, strlen (input),  
+       0, 0, vec, 10);         
+
+    if (count != 1) done = TRUE;
+    if (!done)
+      {
+      char *temp = strdup (input);
+      temp[vec[0]] = 0;
+      kmsstring_append (s, temp);
+      free (temp);
+      char *subs = strdup (input+ vec[0]+1);
+      subs [vec[1] - vec[0] - 2] = 0;
+      kmsstring_append (s, "<br/>");
+      free (subs);
+      temp = strdup (input + vec[1]);
+      free (temp);
+      memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+      }
     }
-  }
 
   kmsstring_append (s, input);
 
@@ -137,42 +165,41 @@ while (!done)
   kmsstring_destroy (s);
   return t;
   }
-
 
 
 /*==========================================================================
   text_subs_indent
 ==========================================================================*/
-char *text_subs_indent (const char *_input)
+static char *text_subs_indent (const char *_input)
   {
   char *input = strdup (_input);
   BOOL done = FALSE;
   KMSString *s = kmsstring_create_empty ();
 
-while (!done)
-  {
-  int vec[10];
-  int count = pcre_exec (re_indent, NULL, input, strlen (input),  
-     0, 0, vec, 10);         
-
-  if (count != 1) done = TRUE;
-  if (!done)
+  while (!done)
     {
-    char *temp = strdup (input);
-    temp[vec[0]] = 0;
-    kmsstring_append (s, temp);
-    free (temp);
-    char *subs = strdup (input+ vec[0]+1);
-    subs [vec[1] - vec[0] - 2] = 0;
-    kmsstring_append (s, "</p>");
-    kmsstring_append (s, "");
-    kmsstring_append (s, "<p>");
-    free (subs);
-    temp = strdup (input + vec[1]);
-    free (temp);
-    memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+    int vec[10];
+    int count = pcre_exec (re_indent, NULL, input, strlen (input),  
+       0, 0, vec, 10);         
+
+    if (count != 1) done = TRUE;
+    if (!done)
+      {
+      char *temp = strdup (input);
+      temp[vec[0]] = 0;
+      kmsstring_append (s, temp);
+      free (temp);
+      char *subs = strdup (input+ vec[0]+1);
+      subs [vec[1] - vec[0] - 2] = 0;
+      kmsstring_append (s, "</p>");
+      kmsstring_append (s, "");
+      kmsstring_append (s, "<p>");
+      free (subs);
+      temp = strdup (input + vec[1]);
+      free (temp);
+      memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+      }
     }
-  }
 
   kmsstring_append (s, input);
 
@@ -183,40 +210,39 @@ while (!done)
   }
 
 
-
 /*==========================================================================
   text_subs_italic
 ==========================================================================*/
-char *text_subs_italic (const char *_input)
+static char *text_subs_italic (const char *_input)
   {
   char *input = strdup (_input);
   BOOL done = FALSE;
   KMSString *s = kmsstring_create_empty ();
 
-while (!done)
-  {
-  int vec[10];
-  int count = pcre_exec (re_italic, NULL, input, strlen (input),  
-     0, 0, vec, 10);         
-
-  if (count != 1) done = TRUE;
-  if (!done)
+  while (!done)
     {
-    char *temp = strdup (input);
-    temp[vec[0]] = 0;
-    kmsstring_append (s, temp);
-    free (temp);
-    char *subs = strdup (input+ vec[0]+1);
-    subs [vec[1] - vec[0] - 2] = 0;
-    kmsstring_append (s, "<i>");
-    kmsstring_append (s, subs);
-    kmsstring_append (s, "</i>");
-    free (subs);
-    temp = strdup (input + vec[1]);
-    free (temp);
-    memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+    int vec[10];
+    int count = pcre_exec (re_italic, NULL, input, strlen (input),  
+       0, 0, vec, 10);         
+
+    if (count != 1) done = TRUE;
+    if (!done)
+      {
+      char *temp = strdup (input);
+      temp[vec[0]] = 0;
+      kmsstring_append (s, temp);
+      free (temp);
+      char *subs = strdup (input+ vec[0]+1);
+      subs [vec[1] - vec[0] - 2] = 0;
+      kmsstring_append (s, "<i>");
+      kmsstring_append (s, subs);
+      kmsstring_append (s, "</i>");
+      free (subs);
+      temp = strdup (input + vec[1]);
+      free (temp);
+      memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+      }
     }
-  }
 
   kmsstring_append (s, input);
 
@@ -230,7 +256,7 @@ while (!done)
 /*==========================================================================
   text_subs_h3
 ==========================================================================*/
-char *text_subs_h3 (const char *_input)
+static char *text_subs_h3 (const char *_input)
   {
   char *input = strdup (_input);
   BOOL done = FALSE;
@@ -272,7 +298,7 @@ char *text_subs_h3 (const char *_input)
 /*==========================================================================
   text_subs_h2
 ==========================================================================*/
-char *text_subs_h2 (const char *_input)
+static char *text_subs_h2 (const char *_input)
   {
   char *input = strdup (_input);
   BOOL done = FALSE;
@@ -314,7 +340,7 @@ char *text_subs_h2 (const char *_input)
 /*==========================================================================
   text_subs_h1
 ==========================================================================*/
-char *text_subs_h1 (const char *_input)
+static char *text_subs_h1 (const char *_input)
   {
   char *input = strdup (_input);
   BOOL done = FALSE;
@@ -355,38 +381,81 @@ char *text_subs_h1 (const char *_input)
 
 
 /*==========================================================================
-  text_subs_bold
+  text_subs_verbatim
+  Replace the (maybe) multi-byte verbatim marker with the single byte
+  VERBATIM_BYTE
 ==========================================================================*/
-char *text_subs_bold (const char *_input)
+static char *text_subs_verbatim (const char *_input)
   {
   char *input = strdup (_input);
   BOOL done = FALSE;
   KMSString *s = kmsstring_create_empty ();
 
-while (!done)
-  {
-  int vec[10];
-  int count = pcre_exec (re_bold, NULL, input, strlen (input),  
-     0, 0, vec, 10);         
-
-  if (count != 1) done = TRUE;
-  if (!done)
+  while (!done)
     {
-    char *temp = strdup (input);
-    temp[vec[0]] = 0;
-    kmsstring_append (s, temp);
-    free (temp);
-    char *subs = strdup (input+ vec[0]+1);
-    subs [vec[1] - vec[0] - 2] = 0;
-    kmsstring_append (s, "<b>");
-    kmsstring_append (s, subs);
-    kmsstring_append (s, "</b>");
-    free (subs);
-    temp = strdup (input + vec[1]);
-    free (temp);
-    memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+    int vec[10];
+    int count = pcre_exec (re_verbatim, NULL, input, strlen (input),  
+       0, 0, vec, 10);         
+
+    if (count != 1) done = TRUE;
+    if (!done)
+      {
+      char *temp = strdup (input);
+      temp[vec[0]] = 0;
+      kmsstring_append (s, temp);
+      free (temp);
+      char *subs = strdup (input+ vec[0]+1);
+      subs [vec[1] - vec[0] - 2] = 0;
+      kmsstring_append_c (s, VERBATIM_BYTE);
+      free (subs);
+      temp = strdup (input + vec[1]);
+      free (temp);
+      memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+      }
     }
+
+  kmsstring_append (s, input);
+
+  char *t = strdup (kmsstring_cstr(s));
+  free (input);
+  kmsstring_destroy (s);
+  return t;
   }
+
+
+/*==========================================================================
+  text_subs_bold
+==========================================================================*/
+static char *text_subs_bold (const char *_input)
+  {
+  char *input = strdup (_input);
+  BOOL done = FALSE;
+  KMSString *s = kmsstring_create_empty ();
+
+  while (!done)
+    {
+    int vec[10];
+    int count = pcre_exec (re_bold, NULL, input, strlen (input),  
+       0, 0, vec, 10);         
+
+    if (count != 1) done = TRUE;
+    if (!done)
+      {
+      char *temp = strdup (input);
+      temp[vec[0]] = 0;
+      kmsstring_append (s, temp);
+      free (temp);
+      char *subs = strdup (input+ vec[0]+1);
+      subs [vec[1] - vec[0] - 2] = 0;
+      kmsstring_append (s, "<b>");
+      kmsstring_append (s, subs);
+      kmsstring_append (s, "</b>");
+      free (subs);
+      temp = strdup (input + vec[1]);
+      free (temp);
+      memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+      }
+    }
 
   kmsstring_append (s, input);
 
@@ -399,36 +468,37 @@ while (!done)
 
 /*==========================================================================
   text_subs_pagenum
+  Try to strip floating page numbers
 ==========================================================================*/
-char *text_subs_pagenum (const char *_input)
+static char *text_subs_pagenum (const char *_input)
   {
   char *input = strdup (_input);
   BOOL done = FALSE;
   KMSString *s = kmsstring_create_empty ();
 
-while (!done)
-  {
-  int vec[10];
-  int count = pcre_exec (re_pagenum, NULL, input, strlen (input),  
-     0, 0, vec, 10);         
-
-  if (count != 1) done = TRUE;
-  if (!done)
+  while (!done)
     {
-    char *temp = strdup (input);
-    temp[vec[0]] = 0;
-    kmsstring_append (s, temp);
-    free (temp);
-    char *subs = strdup (input+ vec[0]+1);
-    subs [vec[1] - vec[0] - 2] = 0;
-    //kmsstring_append (s, subs);
-    // Do nothing in this case -- just dump the whole thing
-    free (subs);
-    temp = strdup (input + vec[1]);
-    free (temp);
-    memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+    int vec[10];
+    int count = pcre_exec (re_pagenum, NULL, input, strlen (input),  
+       0, 0, vec, 10);         
+
+    if (count != 1) done = TRUE;
+    if (!done)
+      {
+      char *temp = strdup (input);
+      temp[vec[0]] = 0;
+      kmsstring_append (s, temp);
+      free (temp);
+      char *subs = strdup (input+ vec[0]+1);
+      subs [vec[1] - vec[0] - 2] = 0;
+      //kmsstring_append (s, subs);
+      // Do nothing in this case -- just dump the whole thing
+      free (subs);
+      temp = strdup (input + vec[1]);
+      free (temp);
+      memmove (input, input + vec[1], strlen (input) - vec[1] + 1);
+      }
     }
-  }
 
   kmsstring_append (s, input);
 
@@ -441,14 +511,56 @@ while (!done)
 
 /*==========================================================================
   escape_html 
+  For each line, we have to convert characters with a special meaning in
+  XHTML to escapes. However, we don't do this for text that lies between
+  verbatim markers, so we have to scan the text for these markers.
 ==========================================================================*/
 static char *escape_html (const char *line)
   {
-  KMSString *new_string = kmsstring_create (line);
+  KMSString *new_string = kmsstring_create ("");
   // We have to do & first, as later substitutions will insert new & chars
-  kmsstring_substitute_all_in_place (new_string, "&", "&amp;");
-  kmsstring_substitute_all_in_place (new_string, ">", "&gt;");
-  kmsstring_substitute_all_in_place (new_string, "<", "&lt;");
+
+  unsigned char *line1 = (unsigned char *)text_subs_verbatim (line);
+  unsigned char *old_line1 = line1;
+  
+  BOOL verbatim = FALSE;
+  while (*line1)
+    {
+    switch (*line1)
+      {
+      case '&':
+        if (verbatim)
+          kmsstring_append_c (new_string, '&'); 
+        else
+          kmsstring_append (new_string, "&amp;"); 
+        break;
+
+      case '>':
+        if (verbatim)
+          kmsstring_append_c (new_string, '>'); 
+        else
+          kmsstring_append (new_string, "&gt;"); 
+        break;
+
+      case '<':
+        if (verbatim)
+          kmsstring_append_c (new_string, '<'); 
+        else
+          kmsstring_append (new_string, "&lt;"); 
+        break;
+
+      case VERBATIM_BYTE: 
+        verbatim = !verbatim;
+        break;
+
+      default:
+        kmsstring_append_c (new_string, *line1);
+      }
+    line1++;
+    }
+
+  free (old_line1);
+
   char *ret = strdup (kmsstring_cstr (new_string)); 
   kmsstring_destroy (new_string);
   return ret;
@@ -456,7 +568,7 @@ static char *escape_html (const char *line)
 
 /*==========================================================================
   format_line 
-  // Note -- line may (in theory) be a magabyte long
+  Note -- line may (in theory) be a magabyte long
 ==========================================================================*/
 static char *format_line (const char *line, BOOL indent_is_para, 
     BOOL markdown, BOOL remove_pagenum, BOOL first_line)

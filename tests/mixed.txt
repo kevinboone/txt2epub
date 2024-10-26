@@ -1,0 +1,11 @@
+This is a test of mixed text and XHTML. It has
+empty lines to denote paragraphs (this is the first)
+but there are embedded XHTML tags.
+
+This is the second para, which ends with 𐄁<b>bold</b>𐄁.
+
+This is the third, with 𐄁<b>bold</b>𐄁 and 𐄁<i>italic</i>.𐄁
+
+This para has special characters &, <, and >, which should appear
+as they are, and not be treated as having any special XHTML sense.
+

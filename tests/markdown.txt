@@ -21,5 +21,7 @@ The heat did make him quiver
 He gave a cough, his leg fell off  
 And floating down the river.
 
+This line has a single, unmatched underscore _ so it should be rendered as one.
+
 And the end.
 
