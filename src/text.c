@@ -191,9 +191,9 @@ static char *text_subs_indent (const char *_input)
       free (temp);
       char *subs = strdup (input+ vec[0]+1);
       subs [vec[1] - vec[0] - 2] = 0;
-      kmsstring_append (s, "</p>");
+      //kmsstring_append (s, "</p>");
       kmsstring_append (s, "");
-      kmsstring_append (s, "<p>");
+      //kmsstring_append (s, "<p>");
       free (subs);
       temp = strdup (input + vec[1]);
       free (temp);
@@ -659,7 +659,7 @@ char *input_file_to_xhtml (const char *textfile, const char *title,
   }
 ///////////
   kmsstring_append (xml, "<body>\n");
-  kmsstring_append (xml, "<p>\n");
+  //kmsstring_append (xml, "<p>\n");
 
   BOOL is_xhtml = FALSE;
   if (strstr (textfile, ".xhtml"))
@@ -674,6 +674,7 @@ char *input_file_to_xhtml (const char *textfile, const char *title,
     {
     BOOL done = FALSE;
     int lines = 0;
+    BOOL in_para = FALSE;
     do
       {
       size_t n = 0;
@@ -695,7 +696,9 @@ char *input_file_to_xhtml (const char *textfile, const char *title,
 	    }
 	  if (strlen (line) <= 1)
 	    {
-	    kmsstring_append (xml, "</p>\n");
+            if (in_para)
+	      kmsstring_append (xml, "</p>\n");
+            in_para = FALSE;
 	    }
 	  char *newline = format_line (line, indent_is_para, markdown, 
 	    remove_pagenum, (lines == 0));
@@ -707,23 +710,43 @@ char *input_file_to_xhtml (const char *textfile, const char *title,
 	    }
 	  else
 	    {
-	    kmsstring_append (xml, newline);
+            //printf ("newline='%s'\n", newline);
+            if (in_para)
+	      kmsstring_append (xml, newline);
+            else
+              {
+              if (strncasecmp (newline, "<h", 2) != 0 && strlen (newline) > 1)
+                {
+	        kmsstring_append (xml, "<p>\n");
+	        kmsstring_append (xml, newline);
+                in_para = TRUE;
+                }
+              else
+                {
+	        kmsstring_append (xml, newline);
+                }
+              }
 	    }
 
 	  if (strlen (line) <= 1)
 	    {
-	    kmsstring_append (xml, "<p>\n");
+	    //kmsstring_append (xml, "<p>\n");
 	    }
 
 	  kmsstring_append (xml, "\n");
 	  if (line_paras)
-	    kmsstring_append (xml, "</p><p>\n");
+	    kmsstring_append (xml, "</p>\n");
           free (newline);
           }
         lines++;
         } 
+      //if (in_para)
+//	kmsstring_append (xml, "</p>\n");
+ 
       if (line) free (line);
       } while (!done); 
+    if (in_para)
+      kmsstring_append (xml, "</p>\n");
     fclose (f);
     }
   else
@@ -732,7 +755,7 @@ char *input_file_to_xhtml (const char *textfile, const char *title,
     kmslog_error ("Can't read file: %s", textfile);
     }
   
-  kmsstring_append (xml, "</p>\n");
+  //kmsstring_append (xml, "</p>\n");
   kmsstring_append (xml, "</body>\n");
   kmsstring_append (xml, "</html>\n");
 

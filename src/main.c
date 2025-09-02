@@ -1,7 +1,7 @@
 /*==========================================================================
   txt2epub
   main.c
-  Copyright *c)201 Kevin Boone, GPL3.0 
+  Copyright (c)2023-2025 Kevin Boone, GPL3.0 
 ==========================================================================*/
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -389,12 +389,15 @@ int main (int argc, char **argv)
 	    free (tocncx);
 	    free (tocncx_ncx);
 	     
-	    char *cover;
-	    char *cover_xhtml = epub_make_cover (cover_basename); 
-	    asprintf (&cover, "%s/cover.html", working_dir);
-	    string_to_file (cover_xhtml, cover);
-	    free (cover);
-	    free (cover_xhtml);
+            if (cover_image)
+              {
+	      char *cover;
+	      char *cover_xhtml = epub_make_cover (cover_basename); 
+	      asprintf (&cover, "%s/cover.html", working_dir);
+	      string_to_file (cover_xhtml, cover);
+	      free (cover);
+	      free (cover_xhtml);
+              }
 
 	    int i;
 	    for (i = 0; i < file_count; i++)
